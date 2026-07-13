@@ -1,0 +1,137 @@
+import { X, Save, AlertCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { api } from '../../services/api';
+
+const FormInput = ({ label, placeholder, value, onChange, maxLength }) => (
+  <fieldset className="border border-gray-300 rounded px-2 pb-1.5 pt-0 bg-white focus-within:border-[#3078b4] transition-colors">
+    <legend className="text-[12px] text-gray-600 px-1 font-medium">{label}</legend>
+    <input 
+      type="text" 
+      placeholder={placeholder} 
+      value={value || ''} 
+      onChange={onChange} 
+      maxLength={maxLength} 
+      className="w-full outline-none text-sm placeholder-gray-300 bg-transparent text-black" 
+    />
+  </fieldset>
+);
+
+export default function EditarDepartamento() {
+  const navigate = useNavigate();
+  const { id } = useParams();
+  
+  const [descricao, setDescricao] = useState('');
+  const [codigo, setCodigo] = useState('');
+  
+  const [salvando, setSalvando] = useState(false);
+  const [carregando, setCarregando] = useState(true);
+  
+  // Estado para capturar e exibir erros elegantes
+  const [erroMensagem, setErroMensagem] = useState('');
+
+  useEffect(() => {
+    async function carregarDados() {
+      try {
+        const response = await api.get(`/departamentos/${id}`);
+        const depto = response.data;
+        setDescricao(depto.descricao);
+        // Suporta a nomenclatura exata vinda do backend
+        setCodigo(depto.codigoDepartamento || depto.codigo || ''); 
+      } catch (error) {
+        console.error("Erro ao carregar dados do departamento:", error);
+        setErroMensagem("Erro ao carregar os dados do departamento para edição.");
+      } finally {
+        setCarregando(false);
+      }
+    }
+    carregarDados();
+  }, [id]);
+
+  async function handleSalvar() {
+    // 1. Limpa erros anteriores
+    setErroMensagem(''); 
+    
+    // 2. Validação básica de front-end
+    if (!descricao || !codigo) { 
+      setErroMensagem("Preencha a descrição e o código do departamento."); 
+      window.scrollTo({ top: 0, behavior: 'smooth' }); 
+      return; 
+    }
+
+    setSalvando(true);
+    try {
+      const payload = {
+        descricao: descricao,
+        // CORREÇÃO: Chave exata que o DTO do Spring Boot espera
+        codigoDepartamento: codigo 
+      };
+      
+      await api.put(`/departamentos/${id}`, payload);
+      navigate('/departamentos'); 
+      
+    } catch (error) {
+      // 3. Captura o erro do backend e joga na tarja vermelha
+      const msgJava = error.response?.data?.message || "Ocorreu um erro ao atualizar o departamento.";
+      setErroMensagem(msgJava);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } finally {
+      setSalvando(false);
+    }
+  }
+
+  if (carregando) return <div className="p-8 text-center text-gray-500">Carregando dados do departamento...</div>;
+
+  return (
+    <div className="w-full max-w-4xl mx-auto pb-10 flex flex-col relative">
+      <div className="mb-6">
+        <h1 className="text-4xl font-bold text-[#3078b4] mb-1">Editar Departamento</h1>
+        <p className="text-gray-500 text-sm">Altere as informações deste departamento</p>
+      </div>
+
+      {/* Componente visual de Erro (Tarja Vermelha) */}
+      {erroMensagem && (
+        <div className="mb-6 flex items-center gap-3 bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded shadow-sm">
+          <AlertCircle size={20} className="text-red-500 flex-shrink-0" />
+          <p className="text-sm font-medium">{erroMensagem}</p>
+        </div>
+      )}
+
+      <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm mb-6">
+        <h2 className="text-lg font-bold text-[#3078b4] mb-6">Informações Gerais</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <FormInput 
+            label="Descrição do Departamento" 
+            placeholder="Ex: Recursos Humanos" 
+            value={descricao} 
+            onChange={(e) => { setDescricao(e.target.value); setErroMensagem(''); }} 
+            maxLength={100} 
+          />
+          <FormInput 
+            label="Código do Departamento" 
+            placeholder="Ex: RH-01" 
+            value={codigo} 
+            onChange={(e) => { setCodigo(e.target.value); setErroMensagem(''); }} 
+            maxLength={50} 
+          />
+        </div>
+      </div>
+
+      <div className="flex justify-center gap-4 mt-8">
+        <button 
+          onClick={() => navigate('/departamentos')} 
+          className="flex items-center gap-2 px-10 py-2 border border-[#3078b4] text-[#3078b4] rounded bg-white hover:bg-blue-50 font-semibold transition-colors text-sm"
+        >
+          <X size={18} /> Cancelar
+        </button>
+        <button 
+          onClick={handleSalvar} 
+          disabled={salvando} 
+          className="flex items-center gap-2 px-10 py-2 bg-[#3078b4] text-white rounded hover:bg-[#276496] font-semibold transition-colors text-sm shadow-sm disabled:opacity-70"
+        >
+          <Save size={18} /> {salvando ? 'Salvando...' : 'Salvar'}
+        </button>
+      </div>
+    </div>
+  );
+}
