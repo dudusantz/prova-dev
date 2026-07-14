@@ -106,4 +106,35 @@ describe('Funcionários', () => {
       cy.get('@relatorio').its('response.headers.content-type').should('include', 'application/pdf');
     });
   });
+
+  it('inativa vínculos e depois o funcionário', () => {
+    cy.criarFuncionarioApi().then((func) => {
+      cy.visit(`/funcionarios/editar/${func.id}`);
+      cy.contains('h1', 'Editar Funcionário').should('be.visible');
+
+      cy.contains('button[title="Editar"]').first().click();
+      cy.contains('h3', 'Editar Vínculo').should('be.visible');
+      cy.contains('h3', 'Editar Vínculo')
+        .parent()
+        .within(() => {
+          cy.contains('legend', 'Situação').parent().find('select').select('inativo');
+          cy.contains('button', 'Confirmar').click();
+        });
+      cy.contains('h3', 'Editar Vínculo').should('not.exist');
+      cy.contains('td', 'Inativo').should('be.visible');
+
+      cy.get('fieldset').filter(':has(legend:contains("Situação"))').first().find('select').select('inativo');
+      cy.clicarBotao('Salvar');
+
+      cy.url().should('eq', `${Cypress.config('baseUrl')}/`);
+      cy.preencherCampoPorLegenda('Nome do Funcionário', func.nome);
+      cy.clicarBotao('Filtrar');
+      cy.contains('td', func.nome).should('not.exist');
+
+      cy.contains('legend', 'Situação').parent().find('select').select('inativo');
+      cy.clicarBotao('Filtrar');
+      cy.contains('td', func.nome).should('be.visible');
+      cy.contains('td', 'Inativo').should('be.visible');
+    });
+  });
 });

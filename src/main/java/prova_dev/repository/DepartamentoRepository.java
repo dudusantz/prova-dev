@@ -20,7 +20,8 @@ public interface DepartamentoRepository extends JpaRepository<Departamento, Long
     @Query("SELECT d FROM Departamento d WHERE " +
            "(:descricao = '' OR LOWER(d.descricao) LIKE LOWER(CONCAT('%', :descricao, '%'))) AND " +
            "(:codigo = '' OR LOWER(d.codigoDepartamento) LIKE LOWER(CONCAT('%', :codigo, '%'))) AND " +
-           "(:ativo IS NULL OR d.ativo = :ativo)")
+           "(:ativo IS NULL OR d.ativo = :ativo) " +
+           "ORDER BY LOWER(d.descricao) ASC")
     Page<Departamento> filtrar(
             @Param("descricao") String descricao,
             @Param("codigo") String codigo,

@@ -120,6 +120,7 @@ export default function Funcionarios() {
   const [filtroEmpresa, setFiltroEmpresa] = useState('');
   const [filtroCargo, setFiltroCargo] = useState('');
   const [filtroDepartamento, setFiltroDepartamento] = useState('');
+  const [filtroSituacao, setFiltroSituacao] = useState('ativo');
 
   // Novos estados para o motor de paginação
   const [pagina, setPagina] = useState(0);
@@ -145,23 +146,36 @@ export default function Funcionarios() {
     }
   }
 
-  // A função única e mestre que controla Busca e Paginação simultaneamente
-  async function handleFiltrar(pageIndex = 0) {
+  async function handleFiltrar(pageIndex = 0, overrides = {}) {
+    const nome = overrides.nome ?? filtroNome;
+    const cpf = overrides.cpf ?? filtroCpf;
+    const matricula = overrides.matricula ?? filtroMatricula;
+    const empresa = overrides.empresa ?? filtroEmpresa;
+    const cargo = overrides.cargo ?? filtroCargo;
+    const departamento = overrides.departamento ?? filtroDepartamento;
+    const situacao = overrides.situacao ?? filtroSituacao;
+
     setCarregando(true);
     try {
+      const paramsSituacao =
+        situacao === 'todos' ? { todos: true } :
+        situacao === 'inativo' ? { ativo: false } :
+        { ativo: true };
+
       const response = await api.get('/funcionarios', {
         params: {
-          nome: filtroNome,
-          cpf: filtroCpf,
-          matricula: filtroMatricula,
-          empresa: filtroEmpresa,
-          cargoId: filtroCargo,
-          departamentoId: filtroDepartamento,
+          nome,
+          cpf,
+          matricula,
+          empresa,
+          cargoId: cargo,
+          departamentoId: departamento,
           page: pageIndex,
-          size: 10 // Registos por página
+          size: 10,
+          ...paramsSituacao,
         }
       });
-      setFuncionarios(response.data.content); // A lista real agora vem dentro de "content"
+      setFuncionarios(response.data.content);
       setTotalPaginas(response.data.totalPages);
       setPagina(pageIndex);
     } catch (error) {
@@ -178,7 +192,16 @@ export default function Funcionarios() {
     setFiltroEmpresa('');
     setFiltroCargo('');
     setFiltroDepartamento('');
-    handleFiltrar(0); // Reseta a busca limpando tudo
+    setFiltroSituacao('ativo');
+    handleFiltrar(0, {
+      nome: '',
+      cpf: '',
+      matricula: '',
+      empresa: '',
+      cargo: '',
+      departamento: '',
+      situacao: 'ativo',
+    });
   }
 
   // Relatório PDF gerado no backend com TODOS os registos do filtro actual
@@ -256,6 +279,21 @@ export default function Funcionarios() {
           />
         </div>
 
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 items-end">
+          <fieldset className="border border-outline rounded px-2 pb-1.5 pt-0 bg-fundo focus-within:border-azul-base transition-colors">
+            <legend className="text-[12px] text-titulo-campo px-1 font-medium">Situação</legend>
+            <select
+              value={filtroSituacao}
+              onChange={(e) => setFiltroSituacao(e.target.value)}
+              className="w-full outline-none text-sm bg-transparent text-destaque font-semibold"
+            >
+              <option value="ativo">Ativo</option>
+              <option value="inativo">Inativo</option>
+              <option value="todos">Todos</option>
+            </select>
+          </fieldset>
+        </div>
+
         {/* Botões de Ação do Filtro */}
         <div className="flex justify-end gap-3 mb-6">
           <button onClick={handleLimparFiltros} className="flex items-center gap-1.5 px-3 py-1.5 text-xs border border-outline text-corpo rounded hover:bg-fundo-2 font-semibold transition-colors">
@@ -278,15 +316,18 @@ export default function Funcionarios() {
                 <th className="py-3 px-4 text-azul-base font-bold text-sm">Matrícula(s)</th>
                 <th className="py-3 px-4 text-azul-base font-bold text-sm">Cargo(s)</th>
                 <th className="py-3 px-4 text-azul-base font-bold text-sm">Departamento(s)</th>
+                <th className="py-3 px-4 text-azul-base font-bold text-sm">Situação</th>
               </tr>
             </thead>
             <tbody>
               {carregando ? (
-                <tr><td colSpan="7" className="py-8 text-center text-corpo">Buscando registros no servidor...</td></tr>
+                <tr><td colSpan="8" className="py-8 text-center text-corpo">Buscando registros no servidor...</td></tr>
               ) : funcionarios.length === 0 ? (
-                <tr><td colSpan="7" className="py-8 text-center text-corpo">Nenhum funcionário atende aos critérios de busca selecionados.</td></tr>
+                <tr><td colSpan="8" className="py-8 text-center text-corpo">Nenhum funcionário atende aos critérios de busca selecionados.</td></tr>
               ) : (
-                funcionarios.map((func) => (
+                funcionarios.map((func) => {
+                  const vinculosAtivos = (func.vinculos || []).filter((v) => v.ativo !== false);
+                  return (
                   <tr key={func.id} className="border-t border-outline hover:bg-fundo-2 transition-colors">
                     <td className="py-3 px-4 text-center">
                       <button onClick={() => navigate(`/funcionarios/editar/${func.id}`)} className="bg-azul-base p-1.5 rounded text-white hover:bg-azul-hover transition-colors" title="Editar">
@@ -297,25 +338,29 @@ export default function Funcionarios() {
                     <td className="py-3 px-4 text-sm font-bold text-destaque whitespace-nowrap">{func.cpf}</td>
                     
                     <td className="py-3 px-4 text-xs font-medium text-titulo-campo">
-                      {func.vinculos?.length > 0 ? func.vinculos.map(v => v.empresa).join(' / ') : '-'}
+                      {vinculosAtivos.length > 0 ? vinculosAtivos.map(v => v.empresa).join(' / ') : '-'}
                     </td>
                     <td className="py-3 px-4 text-xs font-medium text-titulo-campo">
-                      {func.vinculos?.length > 0 ? func.vinculos.map(v => v.matricula).join(' / ') : '-'}
+                      {vinculosAtivos.length > 0 ? vinculosAtivos.map(v => v.matricula).join(' / ') : '-'}
                     </td>
                     <td className="py-3 px-4 text-xs font-medium text-titulo-campo">
-                      {func.vinculos?.length > 0 ? func.vinculos.map(v => {
+                      {vinculosAtivos.length > 0 ? vinculosAtivos.map(v => {
                         const cargo = cargosDb.find(c => c.codigoCargo === v.codigoCargo || c.id === v.cargoId);
                         return cargo ? cargo.descricao : v.descricaoCargo || 'N/D';
                       }).join(' / ') : '-'}
                     </td>
                     <td className="py-3 px-4 text-xs font-medium text-titulo-campo">
-                      {func.vinculos?.length > 0 ? func.vinculos.map(v => {
+                      {vinculosAtivos.length > 0 ? vinculosAtivos.map(v => {
                         const depto = departamentosDb.find(d => d.codigoDepartamento === v.codigoDepartamento || d.id === v.departamentoId);
                         return depto ? depto.descricao : v.descricaoDepartamento || 'N/D';
                       }).join(' / ') : '-'}
                     </td>
+                    <td className="py-3 px-4 text-sm font-bold text-destaque">
+                      {func.ativo === false ? 'Inativo' : 'Ativo'}
+                    </td>
                   </tr>
-                ))
+                  );
+                })
               )}
             </tbody>
           </table>

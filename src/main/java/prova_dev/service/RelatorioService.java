@@ -29,8 +29,6 @@ import java.io.ByteArrayOutputStream;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -41,6 +39,7 @@ public class RelatorioService {
     private static final Color BORDA = new Color(200, 200, 200);
     private static final Color TEXTO = Color.BLACK;
     private static final Color TEXTO_SECUNDARIO = new Color(82, 82, 82);
+    private static final Color FUNDO_ZEBRA = new Color(245, 250, 253);
     private static final DateTimeFormatter FORMATADOR_DATA =
             DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
@@ -55,10 +54,11 @@ public class RelatorioService {
             String matricula,
             String empresa,
             Long cargoId,
-            Long departamentoId
+            Long departamentoId,
+            Boolean ativo
     ) {
         List<FuncionarioResponseDTO> dados = funcionarioService
-                .filtrar(nome, cpf, matricula, empresa, cargoId, departamentoId, Pageable.unpaged())
+                .filtrar(nome, cpf, matricula, empresa, cargoId, departamentoId, ativo, Pageable.unpaged())
                 .getContent();
         return montarPdfFuncionarios(dados);
     }
@@ -91,25 +91,22 @@ public class RelatorioService {
 
             adicionarCabecalho(document, "Relat\u00f3rio de Funcion\u00e1rios", dados.size());
 
-            PdfPTable tabela = criarTabela(6, new float[]{2.2f, 1.4f, 1.8f, 1.4f, 1.8f, 1.8f});
+            PdfPTable tabela = criarTabela(6, new float[]{2.2f, 1.5f, 1.8f, 1.3f, 1.8f, 1.8f});
             adicionarCabecalhosTabela(
                     tabela,
                     "Nome",
                     "CPF",
-                    "Empresa(s)",
-                    "Matr\u00edcula(s)",
-                    "Cargo(s)",
-                    "Departamento(s)"
+                    "Empresa",
+                    "Matr\u00edcula",
+                    "Cargo",
+                    "Departamento"
             );
 
+            boolean zebraGrupo = false;
             for (FuncionarioResponseDTO func : dados) {
-                List<VinculoResponseDTO> vinculos = func.vinculos() == null ? List.of() : func.vinculos();
-                adicionarCelula(tabela, func.nome());
-                adicionarCelula(tabela, func.cpf());
-                adicionarCelula(tabela, juntar(vinculos, VinculoResponseDTO::empresa));
-                adicionarCelula(tabela, juntar(vinculos, VinculoResponseDTO::matricula));
-                adicionarCelula(tabela, juntar(vinculos, VinculoResponseDTO::descricaoCargo));
-                adicionarCelula(tabela, juntar(vinculos, VinculoResponseDTO::descricaoDepartamento));
+                List<VinculoResponseDTO> vinculos = vinculosAtivos(func);
+                adicionarLinhasFuncionario(tabela, func, vinculos, zebraGrupo);
+                zebraGrupo = !zebraGrupo;
             }
 
             document.add(tabela);
@@ -265,28 +262,89 @@ public class RelatorioService {
     }
 
     private void adicionarCelula(PdfPTable tabela, String valor) {
-        Font font = FontFactory.getFont(FontFactory.HELVETICA, 8, TEXTO);
-        PdfPCell cell = new PdfPCell(new Phrase(valor == null || valor.isBlank() ? "-" : valor, font));
-        cell.setPadding(5f);
-        cell.setBorderColor(BORDA);
-        cell.setBorderWidth(0.6f);
-        cell.setBackgroundColor(Color.WHITE);
+        adicionarCelula(tabela, valor, false);
+    }
+
+    private void adicionarCelula(PdfPTable tabela, String valor, boolean zebra) {
+        tabela.addCell(criarCelula(valor, 1, zebra, false));
+    }
+
+    private void adicionarLinhasFuncionario(
+            PdfPTable tabela,
+            FuncionarioResponseDTO func,
+            List<VinculoResponseDTO> vinculos,
+            boolean zebra
+    ) {
+        if (vinculos.isEmpty()) {
+            adicionarCelulaIdentidade(tabela, func.nome(), 1, zebra);
+            adicionarCelulaIdentidade(tabela, func.cpf(), 1, zebra);
+            adicionarCelula(tabela, "-", zebra);
+            adicionarCelula(tabela, "-", zebra);
+            adicionarCelula(tabela, "-", zebra);
+            adicionarCelula(tabela, "-", zebra);
+            return;
+        }
+
+        int total = vinculos.size();
+        for (int i = 0; i < total; i++) {
+            VinculoResponseDTO vinculo = vinculos.get(i);
+            if (i == 0) {
+                adicionarCelulaIdentidade(tabela, func.nome(), total, zebra);
+                adicionarCelulaIdentidade(tabela, func.cpf(), total, zebra);
+            }
+            adicionarCelula(tabela, vinculo.empresa(), zebra);
+            adicionarCelula(tabela, vinculo.matricula(), zebra);
+            adicionarCelula(tabela, vinculo.descricaoCargo(), zebra);
+            adicionarCelula(tabela, vinculo.descricaoDepartamento(), zebra);
+        }
+    }
+
+    private void adicionarCelulaIdentidade(PdfPTable tabela, String valor, int rowspan, boolean zebra) {
+        PdfPCell cell = criarCelula(valor, rowspan, zebra, true);
         cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
         tabela.addCell(cell);
     }
 
-    private String situacao(Boolean ativo) {
-        return Boolean.FALSE.equals(ativo) ? "Inativo" : "Ativo";
+    private PdfPCell criarCelula(String valor, int rowspan, boolean zebra, boolean identidade) {
+        Font font = FontFactory.getFont(
+                identidade ? FontFactory.HELVETICA_BOLD : FontFactory.HELVETICA,
+                8,
+                TEXTO
+        );
+        PdfPCell cell = new PdfPCell(new Phrase(valor == null || valor.isBlank() ? "-" : valor, font));
+        cell.setPadding(5f);
+        cell.setBorderColor(BORDA);
+        cell.setBorderWidth(0.6f);
+        cell.setBackgroundColor(zebra ? FUNDO_ZEBRA : Color.WHITE);
+        cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+        if (rowspan > 1) {
+            cell.setRowspan(rowspan);
+        }
+        return cell;
     }
 
-    private String juntar(List<VinculoResponseDTO> vinculos, Function<VinculoResponseDTO, String> mapper) {
-        if (vinculos.isEmpty()) {
-            return "-";
+    private List<VinculoResponseDTO> vinculosAtivos(FuncionarioResponseDTO func) {
+        if (func.vinculos() == null) {
+            return List.of();
         }
-        return vinculos.stream()
-                .map(mapper)
-                .map(v -> v == null || v.isBlank() ? "N/D" : v)
-                .collect(Collectors.joining("\n"));
+        return func.vinculos().stream()
+                .filter(v -> !Boolean.FALSE.equals(v.ativo()))
+                .sorted((a, b) -> {
+                    String empresaA = a.empresa() == null ? "" : a.empresa();
+                    String empresaB = b.empresa() == null ? "" : b.empresa();
+                    int porEmpresa = empresaA.compareToIgnoreCase(empresaB);
+                    if (porEmpresa != 0) {
+                        return porEmpresa;
+                    }
+                    String matA = a.matricula() == null ? "" : a.matricula();
+                    String matB = b.matricula() == null ? "" : b.matricula();
+                    return matA.compareToIgnoreCase(matB);
+                })
+                .toList();
+    }
+
+    private String situacao(Boolean ativo) {
+        return Boolean.FALSE.equals(ativo) ? "Inativo" : "Ativo";
     }
 
     /** Rodapé no estilo do espelho ponto: linha + numeração à direita. */

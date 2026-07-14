@@ -29,6 +29,9 @@ public class Vinculo {
     @Column(nullable = false, length = 50)
     private String matricula;
 
+    @Column(nullable = false)
+    private Boolean ativo = true;
+
     // Relacionamentos com as outras classes (Foreign Keys)
     
     @ManyToOne(fetch = FetchType.LAZY)

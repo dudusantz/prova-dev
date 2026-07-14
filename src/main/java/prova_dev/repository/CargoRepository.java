@@ -20,7 +20,8 @@ public interface CargoRepository extends JpaRepository<Cargo, Long> {
     @Query("SELECT c FROM Cargo c WHERE " +
            "(:descricao = '' OR LOWER(c.descricao) LIKE LOWER(CONCAT('%', :descricao, '%'))) AND " +
            "(:codigo = '' OR LOWER(c.codigoCargo) LIKE LOWER(CONCAT('%', :codigo, '%'))) AND " +
-           "(:ativo IS NULL OR c.ativo = :ativo)")
+           "(:ativo IS NULL OR c.ativo = :ativo) " +
+           "ORDER BY LOWER(c.descricao) ASC")
     Page<Cargo> filtrar(
             @Param("descricao") String descricao,
             @Param("codigo") String codigo,

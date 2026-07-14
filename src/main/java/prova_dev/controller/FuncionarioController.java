@@ -38,11 +38,16 @@ public class FuncionarioController {
             @RequestParam(required = false) String empresa,
             @RequestParam(required = false) Long cargoId,
             @RequestParam(required = false) Long departamentoId,
+            @RequestParam(required = false, defaultValue = "true") Boolean ativo,
+            @RequestParam(required = false) Boolean todos,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
+        Boolean filtroAtivo = Boolean.TRUE.equals(todos) ? null : ativo;
         Pageable pageable = PageRequest.of(page, size);
-        return ResponseEntity.ok(funcionarioService.filtrar(nome, cpf, matricula, empresa, cargoId, departamentoId, pageable));
+        return ResponseEntity.ok(funcionarioService.filtrar(
+                nome, cpf, matricula, empresa, cargoId, departamentoId, filtroAtivo, pageable
+        ));
     }
 
     @GetMapping("/relatorio")
@@ -54,7 +59,10 @@ public class FuncionarioController {
             @RequestParam(required = false) Long cargoId,
             @RequestParam(required = false) Long departamentoId
     ) {
-        byte[] pdf = relatorioService.gerarRelatorioFuncionarios(nome, cpf, matricula, empresa, cargoId, departamentoId);
+        // Relatório sempre lista apenas funcionários ativos
+        byte[] pdf = relatorioService.gerarRelatorioFuncionarios(
+                nome, cpf, matricula, empresa, cargoId, departamentoId, true
+        );
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=relatorio-funcionarios.pdf")
                 .contentType(MediaType.APPLICATION_PDF)

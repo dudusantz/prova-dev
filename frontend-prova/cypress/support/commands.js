@@ -145,7 +145,7 @@ Cypress.Commands.add('garantirPaginasDepartamentos', (minTotal = 11) => {
 });
 
 Cypress.Commands.add('garantirPaginasFuncionarios', (minTotal = 11) => {
-  cy.apiGet('/funcionarios', { page: 0, size: 1 }).then((res) => {
+  cy.apiGet('/funcionarios', { page: 0, size: 1, ativo: true }).then((res) => {
     const total = res.body.totalElements || 0;
     const faltam = Math.max(0, minTotal - total);
     for (let i = 0; i < faltam; i += 1) {

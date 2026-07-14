@@ -28,8 +28,12 @@ class RelatorioServiceTest {
                 1L,
                 "Ana Silva",
                 "529.982.247-25",
+                true,
                 List.of(new VinculoResponseDTO(
-                        1L, "Empresa X", "MAT-1", "DEV", "Desenvolvedor", "TI", "Tecnologia"
+                        1L, "Empresa X", "MAT-1",
+                        1L, "DEV", "Desenvolvedor",
+                        2L, "TI", "Tecnologia",
+                        true
                 ))
         );
 
@@ -41,6 +45,36 @@ class RelatorioServiceTest {
         assertEquals('P', (char) pdf[1]);
         assertEquals('D', (char) pdf[2]);
         assertEquals('F', (char) pdf[3]);
+    }
+
+    @Test
+    void deveGerarPdfFuncionariosComMultiplosVinculos() {
+        FuncionarioResponseDTO funcionario = new FuncionarioResponseDTO(
+                1L,
+                "Eduardo Vinicius",
+                "123.456.789-09",
+                true,
+                List.of(
+                        new VinculoResponseDTO(
+                                1L, "Dixi Ponto", "20",
+                                1L, "DEV", "Desenvolvedor Backend",
+                                2L, "DEV", "Desenvolvimento",
+                                true
+                        ),
+                        new VinculoResponseDTO(
+                                2L, "Empresa 01", "20",
+                                3L, "GES", "Gestor",
+                                4L, "RH", "Recursos Humanos",
+                                true
+                        )
+                )
+        );
+
+        byte[] pdf = relatorioService.montarPdfFuncionarios(List.of(funcionario));
+
+        assertNotNull(pdf);
+        assertTrue(pdf.length > 100);
+        assertEquals('%', (char) pdf[0]);
     }
 
     @Test

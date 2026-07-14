@@ -32,8 +32,11 @@ public class Funcionario {
     @Column(unique = true, nullable = false, length = 14)
     private String cpf;
 
+    @Column(nullable = false)
+    private Boolean ativo = true;
+
     // Relacionamento Bidirecional: Um funcionário possui uma lista de vínculos.
-    // orphanRemoval = true garante que se removermos um vínculo desta lista, ele será deletado do banco.
+    // orphanRemoval = true: só remove do banco se o vínculo sair da coleção (não usamos exclusão física).
     @OneToMany(mappedBy = "funcionario", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Vinculo> vinculos = new ArrayList<>();
 

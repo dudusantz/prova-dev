@@ -13,29 +13,48 @@ public interface FuncionarioRepository extends JpaRepository<Funcionario, Long> 
 
     boolean existsByCpf(String cpf);
 
-    // Verifica se a matrícula existe na MESMA empresa (Criação)
-    @Query("SELECT COUNT(v) > 0 FROM Funcionario f JOIN f.vinculos v WHERE UPPER(TRIM(v.matricula)) = UPPER(TRIM(:matricula)) AND UPPER(TRIM(v.empresa)) = UPPER(TRIM(:empresa))")
+    // Unicidade de matrícula+empresa apenas entre vínculos ATIVOS
+    @Query("""
+            SELECT COUNT(v) > 0 FROM Funcionario f JOIN f.vinculos v
+            WHERE UPPER(TRIM(v.matricula)) = UPPER(TRIM(:matricula))
+              AND UPPER(TRIM(v.empresa)) = UPPER(TRIM(:empresa))
+              AND v.ativo = true
+            """)
     boolean existeMatriculaNaEmpresa(@Param("matricula") String matricula, @Param("empresa") String empresa);
 
-    // Verifica se a matrícula existe na MESMA empresa, ignorando o próprio funcionário (Edição)
-    @Query("SELECT COUNT(v) > 0 FROM Funcionario f JOIN f.vinculos v WHERE UPPER(TRIM(v.matricula)) = UPPER(TRIM(:matricula)) AND UPPER(TRIM(v.empresa)) = UPPER(TRIM(:empresa)) AND f.id <> :funcionarioId")
-    boolean existeMatriculaNaEmpresaEmOutroFuncionario(@Param("matricula") String matricula, @Param("empresa") String empresa, @Param("funcionarioId") Long funcionarioId);
+    @Query("""
+            SELECT COUNT(v) > 0 FROM Funcionario f JOIN f.vinculos v
+            WHERE UPPER(TRIM(v.matricula)) = UPPER(TRIM(:matricula))
+              AND UPPER(TRIM(v.empresa)) = UPPER(TRIM(:empresa))
+              AND v.ativo = true
+              AND f.id <> :funcionarioId
+            """)
+    boolean existeMatriculaNaEmpresaEmOutroFuncionario(
+            @Param("matricula") String matricula,
+            @Param("empresa") String empresa,
+            @Param("funcionarioId") Long funcionarioId
+    );
 
-    @Query("SELECT DISTINCT f FROM Funcionario f " +
-           "LEFT JOIN f.vinculos v " +
-           "WHERE (:nome = '' OR LOWER(f.nome) LIKE LOWER(CONCAT('%', :nome, '%'))) " +
-           "AND (:cpf = '' OR f.cpf = :cpf) " +
-           "AND (:matricula = '' OR v.matricula = :matricula) " +
-           "AND (:empresa = '' OR LOWER(v.empresa) LIKE LOWER(CONCAT('%', :empresa, '%'))) " +
-           "AND (:cargoId = 0L OR v.cargo.id = :cargoId) " +
-           "AND (:departamentoId = 0L OR v.departamento.id = :departamentoId)")
+    @Query("""
+            SELECT DISTINCT f FROM Funcionario f
+            LEFT JOIN f.vinculos v
+            WHERE (:nome = '' OR LOWER(f.nome) LIKE LOWER(CONCAT('%', :nome, '%')))
+              AND (:cpf = '' OR f.cpf = :cpf)
+              AND (:matricula = '' OR (v.matricula = :matricula AND v.ativo = true))
+              AND (:empresa = '' OR (LOWER(v.empresa) LIKE LOWER(CONCAT('%', :empresa, '%')) AND v.ativo = true))
+              AND (:cargoId = 0L OR (v.cargo.id = :cargoId AND v.ativo = true))
+              AND (:departamentoId = 0L OR (v.departamento.id = :departamentoId AND v.ativo = true))
+              AND (:ativo IS NULL OR f.ativo = :ativo)
+            ORDER BY f.nome ASC
+            """)
     Page<Funcionario> filtrar(
-        @Param("nome") String nome,
-        @Param("cpf") String cpf,
-        @Param("matricula") String matricula,
-        @Param("empresa") String empresa,
-        @Param("cargoId") Long cargoId,
-        @Param("departamentoId") Long departamentoId,
-        Pageable pageable
+            @Param("nome") String nome,
+            @Param("cpf") String cpf,
+            @Param("matricula") String matricula,
+            @Param("empresa") String empresa,
+            @Param("cargoId") Long cargoId,
+            @Param("departamentoId") Long departamentoId,
+            @Param("ativo") Boolean ativo,
+            Pageable pageable
     );
 }

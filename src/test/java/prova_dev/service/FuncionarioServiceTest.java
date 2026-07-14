@@ -17,6 +17,7 @@ import prova_dev.exception.RegraNegocioException;
 import prova_dev.model.Cargo;
 import prova_dev.model.Departamento;
 import prova_dev.model.Funcionario;
+import prova_dev.model.Vinculo;
 import prova_dev.repository.CargoRepository;
 import prova_dev.repository.DepartamentoRepository;
 import prova_dev.repository.FuncionarioRepository;
@@ -50,7 +51,8 @@ class FuncionarioServiceTest {
         FuncionarioRequestDTO dto = new FuncionarioRequestDTO(
                 "Ana Silva",
                 "529.982.247-25",
-                List.of(new VinculoRequestDTO("Empresa X", "MAT-001", 1L, 1L))
+                null,
+                List.of(new VinculoRequestDTO(null, "Empresa X", "MAT-001", 1L, 1L, true))
         );
 
         RegraNegocioException ex = assertThrows(RegraNegocioException.class, () -> funcionarioService.salvar(dto));
@@ -77,9 +79,10 @@ class FuncionarioServiceTest {
         FuncionarioRequestDTO dto = new FuncionarioRequestDTO(
                 "Ana Silva",
                 "529.982.247-25",
+                null,
                 List.of(
-                        new VinculoRequestDTO("Empresa A", "MAT-001", 1L, 10L),
-                        new VinculoRequestDTO("Empresa B", "MAT-002", 2L, 20L)
+                        new VinculoRequestDTO(null, "Empresa A", "MAT-001", 1L, 10L, true),
+                        new VinculoRequestDTO(null, "Empresa B", "MAT-002", 2L, 20L, true)
                 )
         );
 
@@ -91,7 +94,9 @@ class FuncionarioServiceTest {
         Funcionario salvo = captor.getValue();
         assertEquals("Ana Silva", salvo.getNome());
         assertEquals("529.982.247-25", salvo.getCpf());
+        assertTrue(salvo.getAtivo());
         assertEquals(2, salvo.getVinculos().size());
+        assertTrue(salvo.getVinculos().get(0).getAtivo());
         assertEquals("Empresa A", salvo.getVinculos().get(0).getEmpresa());
         assertEquals("MAT-002", salvo.getVinculos().get(1).getMatricula());
     }
@@ -105,7 +110,8 @@ class FuncionarioServiceTest {
         FuncionarioRequestDTO dto = new FuncionarioRequestDTO(
                 "Ana Silva",
                 "529.982.247-25",
-                List.of(new VinculoRequestDTO("Empresa X", "MAT-001", 99L, 1L))
+                null,
+                List.of(new VinculoRequestDTO(null, "Empresa X", "MAT-001", 99L, 1L, true))
         );
 
         RegraNegocioException ex = assertThrows(RegraNegocioException.class, () -> funcionarioService.salvar(dto));
@@ -123,7 +129,8 @@ class FuncionarioServiceTest {
         FuncionarioRequestDTO dto = new FuncionarioRequestDTO(
                 "Ana Silva",
                 "529.982.247-25",
-                List.of(new VinculoRequestDTO("Empresa X", "MAT-001", 1L, 99L))
+                null,
+                List.of(new VinculoRequestDTO(null, "Empresa X", "MAT-001", 1L, 99L, true))
         );
 
         RegraNegocioException ex = assertThrows(RegraNegocioException.class, () -> funcionarioService.salvar(dto));
@@ -138,7 +145,8 @@ class FuncionarioServiceTest {
         FuncionarioRequestDTO dto = new FuncionarioRequestDTO(
                 "Ana Silva",
                 "529.982.247-25",
-                List.of(new VinculoRequestDTO("Empresa X", "MAT-001", 1L, 1L))
+                null,
+                List.of(new VinculoRequestDTO(null, "Empresa X", "MAT-001", 1L, 1L, true))
         );
 
         RegraNegocioException ex = assertThrows(RegraNegocioException.class, () -> funcionarioService.salvar(dto));
@@ -147,35 +155,114 @@ class FuncionarioServiceTest {
     }
 
     @Test
-    void deveAtualizarVinculosDoFuncionario() {
+    void deveInativarVinculoSemExcluir() {
         Funcionario existente = new Funcionario();
         existente.setId(5L);
         existente.setNome("Nome Antigo");
         existente.setCpf("529.982.247-25");
+        existente.setAtivo(true);
+
+        Vinculo vinculo = new Vinculo();
+        vinculo.setId(50L);
+        vinculo.setEmpresa("Empresa Antiga");
+        vinculo.setMatricula("MAT-1");
+        vinculo.setCargo(cargo(1L, "DEV", "Desenvolvedor"));
+        vinculo.setDepartamento(departamento(10L, "TI", "Tecnologia"));
+        vinculo.setAtivo(true);
+        existente.addVinculo(vinculo);
 
         when(funcionarioRepository.findById(5L)).thenReturn(Optional.of(existente));
-        when(funcionarioRepository.existeMatriculaNaEmpresaEmOutroFuncionario(anyString(), anyString(), eq(5L)))
-                .thenReturn(false);
         when(cargoRepository.findById(1L)).thenReturn(Optional.of(cargo(1L, "DEV", "Desenvolvedor")));
         when(departamentoRepository.findById(10L)).thenReturn(Optional.of(departamento(10L, "TI", "Tecnologia")));
         when(funcionarioRepository.save(any(Funcionario.class))).thenAnswer(inv -> inv.getArgument(0));
 
         FuncionarioRequestDTO dto = new FuncionarioRequestDTO(
-                "Nome Novo",
+                "Nome Antigo",
                 "529.982.247-25",
-                List.of(new VinculoRequestDTO("Empresa Nova", "MAT-999", 1L, 10L))
+                true,
+                List.of(new VinculoRequestDTO(50L, "Empresa Antiga", "MAT-1", 1L, 10L, false))
         );
 
         assertDoesNotThrow(() -> funcionarioService.atualizar(5L, dto));
 
         ArgumentCaptor<Funcionario> captor = ArgumentCaptor.forClass(Funcionario.class);
         verify(funcionarioRepository).save(captor.capture());
-
         Funcionario atualizado = captor.getValue();
-        assertEquals("Nome Novo", atualizado.getNome());
         assertEquals(1, atualizado.getVinculos().size());
-        assertEquals("Empresa Nova", atualizado.getVinculos().get(0).getEmpresa());
-        assertEquals("MAT-999", atualizado.getVinculos().get(0).getMatricula());
+        assertFalse(atualizado.getVinculos().get(0).getAtivo());
+        assertEquals(50L, atualizado.getVinculos().get(0).getId());
+    }
+
+    @Test
+    void deveRecusarInativarFuncionarioComVinculoAtivo() {
+        Funcionario existente = new Funcionario();
+        existente.setId(5L);
+        existente.setNome("Ana");
+        existente.setCpf("529.982.247-25");
+        existente.setAtivo(true);
+
+        Vinculo vinculo = new Vinculo();
+        vinculo.setId(50L);
+        vinculo.setEmpresa("Empresa X");
+        vinculo.setMatricula("MAT-1");
+        vinculo.setCargo(cargo(1L, "DEV", "Desenvolvedor"));
+        vinculo.setDepartamento(departamento(10L, "TI", "Tecnologia"));
+        vinculo.setAtivo(true);
+        existente.addVinculo(vinculo);
+
+        when(funcionarioRepository.findById(5L)).thenReturn(Optional.of(existente));
+        when(funcionarioRepository.existeMatriculaNaEmpresaEmOutroFuncionario(anyString(), anyString(), eq(5L)))
+                .thenReturn(false);
+        when(cargoRepository.findById(1L)).thenReturn(Optional.of(cargo(1L, "DEV", "Desenvolvedor")));
+        when(departamentoRepository.findById(10L)).thenReturn(Optional.of(departamento(10L, "TI", "Tecnologia")));
+
+        FuncionarioRequestDTO dto = new FuncionarioRequestDTO(
+                "Ana",
+                "529.982.247-25",
+                false,
+                List.of(new VinculoRequestDTO(50L, "Empresa X", "MAT-1", 1L, 10L, true))
+        );
+
+        RegraNegocioException ex = assertThrows(RegraNegocioException.class, () -> funcionarioService.atualizar(5L, dto));
+        assertTrue(ex.getMessage().contains("Não é possível inativar o funcionário"));
+        verify(funcionarioRepository, never()).save(any());
+    }
+
+    @Test
+    void deveInativarFuncionarioQuandoNaoHaVinculoAtivo() {
+        Funcionario existente = new Funcionario();
+        existente.setId(5L);
+        existente.setNome("Ana");
+        existente.setCpf("529.982.247-25");
+        existente.setAtivo(true);
+
+        Vinculo vinculo = new Vinculo();
+        vinculo.setId(50L);
+        vinculo.setEmpresa("Empresa X");
+        vinculo.setMatricula("MAT-1");
+        vinculo.setCargo(cargo(1L, "DEV", "Desenvolvedor"));
+        vinculo.setDepartamento(departamento(10L, "TI", "Tecnologia"));
+        vinculo.setAtivo(true);
+        existente.addVinculo(vinculo);
+
+        when(funcionarioRepository.findById(5L)).thenReturn(Optional.of(existente));
+        when(cargoRepository.findById(1L)).thenReturn(Optional.of(cargo(1L, "DEV", "Desenvolvedor")));
+        when(departamentoRepository.findById(10L)).thenReturn(Optional.of(departamento(10L, "TI", "Tecnologia")));
+        when(funcionarioRepository.save(any(Funcionario.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        FuncionarioRequestDTO dto = new FuncionarioRequestDTO(
+                "Ana",
+                "529.982.247-25",
+                false,
+                List.of(new VinculoRequestDTO(50L, "Empresa X", "MAT-1", 1L, 10L, false))
+        );
+
+        assertDoesNotThrow(() -> funcionarioService.atualizar(5L, dto));
+
+        ArgumentCaptor<Funcionario> captor = ArgumentCaptor.forClass(Funcionario.class);
+        verify(funcionarioRepository).save(captor.capture());
+        assertFalse(captor.getValue().getAtivo());
+        assertFalse(captor.getValue().getVinculos().get(0).getAtivo());
     }
 
     @Test
@@ -191,7 +278,8 @@ class FuncionarioServiceTest {
         FuncionarioRequestDTO dto = new FuncionarioRequestDTO(
                 "Ana",
                 "390.533.447-05",
-                List.of(new VinculoRequestDTO("Empresa X", "MAT-001", 1L, 1L))
+                true,
+                List.of(new VinculoRequestDTO(null, "Empresa X", "MAT-001", 1L, 1L, true))
         );
 
         RegraNegocioException ex = assertThrows(RegraNegocioException.class, () -> funcionarioService.atualizar(5L, dto));
@@ -206,29 +294,32 @@ class FuncionarioServiceTest {
         funcionario.setId(1L);
         funcionario.setNome("Ana");
         funcionario.setCpf("529.982.247-25");
+        funcionario.setAtivo(true);
 
-        when(funcionarioRepository.filtrar(eq(""), eq(""), eq(""), eq(""), eq(0L), eq(0L), eq(pageable)))
+        when(funcionarioRepository.filtrar(eq(""), eq(""), eq(""), eq(""), eq(0L), eq(0L), eq(true), eq(pageable)))
                 .thenReturn(new PageImpl<>(List.of(funcionario)));
 
-        Page<FuncionarioResponseDTO> resultado = funcionarioService.filtrar(null, "  ", null, "", null, null, pageable);
+        Page<FuncionarioResponseDTO> resultado = funcionarioService.filtrar(
+                null, "  ", null, "", null, null, true, pageable
+        );
 
         assertEquals(1, resultado.getTotalElements());
         assertEquals("Ana", resultado.getContent().get(0).nome());
-        verify(funcionarioRepository).filtrar("", "", "", "", 0L, 0L, pageable);
+        verify(funcionarioRepository).filtrar("", "", "", "", 0L, 0L, true, pageable);
     }
 
     @Test
     void deveFiltrarRepassandoCriteriosInformados() {
         Pageable pageable = PageRequest.of(1, 10);
-        when(funcionarioRepository.filtrar("Ana", "529.982.247-25", "MAT-1", "Empresa", 3L, 7L, pageable))
+        when(funcionarioRepository.filtrar("Ana", "529.982.247-25", "MAT-1", "Empresa", 3L, 7L, null, pageable))
                 .thenReturn(Page.empty(pageable));
 
         Page<FuncionarioResponseDTO> resultado = funcionarioService.filtrar(
-                "Ana", "529.982.247-25", "MAT-1", "Empresa", 3L, 7L, pageable
+                "Ana", "529.982.247-25", "MAT-1", "Empresa", 3L, 7L, null, pageable
         );
 
         assertTrue(resultado.isEmpty());
-        verify(funcionarioRepository).filtrar("Ana", "529.982.247-25", "MAT-1", "Empresa", 3L, 7L, pageable);
+        verify(funcionarioRepository).filtrar("Ana", "529.982.247-25", "MAT-1", "Empresa", 3L, 7L, null, pageable);
     }
 
     private static Cargo cargo(Long id, String codigo, String descricao) {
