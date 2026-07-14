@@ -6,28 +6,42 @@ import { api } from '../../services/api';
 const FormInput = ({ label, placeholder, value, onChange, maxLength }) => (
   <fieldset className="border border-outline rounded px-2 pb-1.5 pt-0 bg-fundo focus-within:border-azul-base transition-colors">
     <legend className="text-[12px] text-titulo-campo px-1 font-medium">{label}</legend>
-    <input 
-      type="text" 
-      placeholder={placeholder} 
-      value={value || ''} 
-      onChange={onChange} 
-      maxLength={maxLength} 
-      className="w-full outline-none text-sm placeholder:text-placeholder bg-transparent text-destaque" 
+    <input
+      type="text"
+      placeholder={placeholder}
+      value={value || ''}
+      onChange={onChange}
+      maxLength={maxLength}
+      className="w-full outline-none text-sm placeholder:text-placeholder bg-transparent text-destaque"
     />
+  </fieldset>
+);
+
+const FormSelect = ({ label, value, onChange, options }) => (
+  <fieldset className="border border-outline rounded px-2 pb-1.5 pt-0 bg-fundo focus-within:border-azul-base transition-colors">
+    <legend className="text-[12px] text-titulo-campo px-1 font-medium">{label}</legend>
+    <select
+      value={value}
+      onChange={onChange}
+      className="w-full outline-none text-sm bg-transparent text-destaque"
+    >
+      {options.map((opt) => (
+        <option key={opt.value} value={opt.value}>{opt.label}</option>
+      ))}
+    </select>
   </fieldset>
 );
 
 export default function EditarDepartamento() {
   const navigate = useNavigate();
   const { id } = useParams();
-  
+
   const [descricao, setDescricao] = useState('');
   const [codigo, setCodigo] = useState('');
-  
+  const [ativo, setAtivo] = useState(true);
+
   const [salvando, setSalvando] = useState(false);
   const [carregando, setCarregando] = useState(true);
-  
-  // Estado para capturar e exibir erros elegantes
   const [erroMensagem, setErroMensagem] = useState('');
 
   useEffect(() => {
@@ -36,8 +50,8 @@ export default function EditarDepartamento() {
         const response = await api.get(`/departamentos/${id}`);
         const depto = response.data;
         setDescricao(depto.descricao);
-        // Suporta a nomenclatura exata vinda do backend
-        setCodigo(depto.codigoDepartamento || depto.codigo || ''); 
+        setCodigo(depto.codigoDepartamento || depto.codigo || '');
+        setAtivo(depto.ativo !== false);
       } catch (error) {
         console.error("Erro ao carregar dados do departamento:", error);
         setErroMensagem("Erro ao carregar os dados do departamento para edição.");
@@ -49,29 +63,25 @@ export default function EditarDepartamento() {
   }, [id]);
 
   async function handleSalvar() {
-    // 1. Limpa erros anteriores
-    setErroMensagem(''); 
-    
-    // 2. Validação básica de front-end
-    if (!descricao || !codigo) { 
-      setErroMensagem("Preencha a descrição e o código do departamento."); 
-      window.scrollTo({ top: 0, behavior: 'smooth' }); 
-      return; 
+    setErroMensagem('');
+
+    if (!descricao || !codigo) {
+      setErroMensagem("Preencha a descrição e o código do departamento.");
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
     }
 
     setSalvando(true);
     try {
       const payload = {
-        descricao: descricao,
-        // CORREÇÃO: Chave exata que o DTO do Spring Boot espera
-        codigoDepartamento: codigo 
+        descricao,
+        codigoDepartamento: codigo,
+        ativo,
       };
-      
+
       await api.put(`/departamentos/${id}`, payload);
-      navigate('/departamentos'); 
-      
+      navigate('/departamentos');
     } catch (error) {
-      // 3. Captura o erro do backend e joga na tarja vermelha
       const msgJava = error.response?.data?.message || "Ocorreu um erro ao atualizar o departamento.";
       setErroMensagem(msgJava);
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -89,7 +99,6 @@ export default function EditarDepartamento() {
         <p className="text-corpo text-sm">Altere as informações deste departamento</p>
       </div>
 
-      {/* Componente visual de Erro (Tarja Vermelha) */}
       {erroMensagem && (
         <div className="mb-6 flex items-center gap-3 bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded shadow-sm">
           <AlertCircle size={20} className="text-red-500 flex-shrink-0" />
@@ -100,33 +109,42 @@ export default function EditarDepartamento() {
       <div className="bg-fundo rounded-xl border border-outline p-6 shadow-sm mb-6">
         <h2 className="text-lg font-bold text-azul-base mb-6">Informações Gerais</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <FormInput 
-            label="Descrição do Departamento" 
-            placeholder="Ex: Recursos Humanos" 
-            value={descricao} 
-            onChange={(e) => { setDescricao(e.target.value); setErroMensagem(''); }} 
-            maxLength={100} 
+          <FormInput
+            label="Descrição do Departamento"
+            placeholder="Ex: Recursos Humanos"
+            value={descricao}
+            onChange={(e) => { setDescricao(e.target.value); setErroMensagem(''); }}
+            maxLength={100}
           />
-          <FormInput 
-            label="Código do Departamento" 
-            placeholder="Ex: RH-01" 
-            value={codigo} 
-            onChange={(e) => { setCodigo(e.target.value); setErroMensagem(''); }} 
-            maxLength={50} 
+          <FormInput
+            label="Código do Departamento"
+            placeholder="Ex: RH-01"
+            value={codigo}
+            onChange={(e) => { setCodigo(e.target.value); setErroMensagem(''); }}
+            maxLength={50}
+          />
+          <FormSelect
+            label="Situação"
+            value={ativo ? 'ativo' : 'inativo'}
+            onChange={(e) => setAtivo(e.target.value === 'ativo')}
+            options={[
+              { value: 'ativo', label: 'Ativo' },
+              { value: 'inativo', label: 'Inativo' },
+            ]}
           />
         </div>
       </div>
 
       <div className="flex justify-center gap-4 mt-8">
-        <button 
-          onClick={() => navigate('/departamentos')} 
+        <button
+          onClick={() => navigate('/departamentos')}
           className="flex items-center gap-2 px-10 py-2 border border-azul-base text-azul-base rounded bg-fundo hover:bg-azul-leve font-semibold transition-colors text-sm"
         >
           <X size={18} /> Cancelar
         </button>
-        <button 
-          onClick={handleSalvar} 
-          disabled={salvando} 
+        <button
+          onClick={handleSalvar}
+          disabled={salvando}
           className="flex items-center gap-2 px-10 py-2 bg-azul-base text-white rounded hover:bg-azul-hover font-semibold transition-colors text-sm shadow-sm disabled:opacity-70"
         >
           <Save size={18} /> {salvando ? 'Salvando...' : 'Salvar'}

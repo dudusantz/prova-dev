@@ -5,10 +5,10 @@ import prova_dev.model.Cargo;
 public record CargoResponseDTO(
     Long id,
     String codigoCargo,
-    String descricao
+    String descricao,
+    Boolean ativo
 ) {
-    // Construtor utilitário para transformar a Entidade em DTO facilmente
     public CargoResponseDTO(Cargo cargo) {
-        this(cargo.getId(), cargo.getCodigoCargo(), cargo.getDescricao());
+        this(cargo.getId(), cargo.getCodigoCargo(), cargo.getDescricao(), cargo.getAtivo());
     }
 }

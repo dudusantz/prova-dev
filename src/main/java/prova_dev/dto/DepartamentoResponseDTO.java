@@ -5,9 +5,15 @@ import prova_dev.model.Departamento;
 public record DepartamentoResponseDTO(
     Long id,
     String codigoDepartamento,
-    String descricao
+    String descricao,
+    Boolean ativo
 ) {
     public DepartamentoResponseDTO(Departamento departamento) {
-        this(departamento.getId(), departamento.getCodigoDepartamento(), departamento.getDescricao());
+        this(
+                departamento.getId(),
+                departamento.getCodigoDepartamento(),
+                departamento.getDescricao(),
+                departamento.getAtivo()
+        );
     }
 }

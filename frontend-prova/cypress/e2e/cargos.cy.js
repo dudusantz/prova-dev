@@ -74,4 +74,22 @@ describe('Cargos', () => {
       cy.get('@relatorio').its('response.headers.content-type').should('include', 'application/pdf');
     });
   });
+
+  it('inativa um cargo pela edição e lista nos inativos', () => {
+    cy.criarCargoApi().then((cargo) => {
+      cy.visit(`/cargos/editar/${cargo.id}`);
+      cy.contains('legend', 'Situação').parent().find('select').select('inativo');
+      cy.clicarBotao('Salvar');
+
+      cy.url().should('include', '/cargos');
+      cy.preencherCampoPorLegenda('Código', cargo.codigoCargo);
+      cy.clicarBotao('Filtrar');
+      cy.contains('td', cargo.codigoCargo).should('not.exist');
+
+      cy.contains('legend', 'Situação').parent().find('select').select('inativo');
+      cy.clicarBotao('Filtrar');
+      cy.contains('td', cargo.codigoCargo).should('be.visible');
+      cy.contains('td', 'Inativo').should('be.visible');
+    });
+  });
 });

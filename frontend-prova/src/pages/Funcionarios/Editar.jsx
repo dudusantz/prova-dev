@@ -49,8 +49,8 @@ export default function EditarFuncionario() {
     async function carregarDados() {
       try {
         const [resCargos, resDeptos, resFunc] = await Promise.all([
-          api.get('/cargos', { params: { page: 0, size: 1000 } }),
-          api.get('/departamentos', { params: { page: 0, size: 1000 } }),
+          api.get('/cargos', { params: { page: 0, size: 1000, ativo: true } }),
+          api.get('/departamentos', { params: { page: 0, size: 1000, ativo: true } }),
           api.get(`/funcionarios/${id}`)
         ]);
 

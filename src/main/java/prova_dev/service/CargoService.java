@@ -19,9 +19,8 @@ public class CargoService {
 
     @Transactional
     public CargoResponseDTO salvar(CargoRequestDTO dto) {
-        String codigo = dto.codigoCargo(); // Captura o dado enviado
-        
-        // --- VALIDAÇÃO BLINDADA ---
+        String codigo = dto.codigoCargo();
+
         if (cargoRepository.existeCodigoIgual(codigo)) {
             throw new RegraNegocioException("Já existe um cargo cadastrado com o código: " + codigo);
         }
@@ -29,6 +28,7 @@ public class CargoService {
         Cargo cargo = new Cargo();
         cargo.setDescricao(dto.descricao());
         cargo.setCodigoCargo(codigo);
+        cargo.setAtivo(true);
 
         cargo = cargoRepository.save(cargo);
         return new CargoResponseDTO(cargo);
@@ -48,24 +48,26 @@ public class CargoService {
 
         String codigo = dto.codigoCargo();
 
-        // --- VALIDAÇÃO BLINDADA ---
         if (cargoRepository.existeCodigoIgualEmOutroCargo(codigo, id)) {
             throw new RegraNegocioException("O código '" + codigo + "' já está sendo usado por outro cargo.");
         }
 
         cargo.setDescricao(dto.descricao());
         cargo.setCodigoCargo(codigo);
+        if (dto.ativo() != null) {
+            cargo.setAtivo(dto.ativo());
+        }
 
         cargo = cargoRepository.save(cargo);
         return new CargoResponseDTO(cargo);
     }
 
     @Transactional(readOnly = true)
-    public Page<CargoResponseDTO> filtrar(String descricao, String codigo, Pageable pageable) {
+    public Page<CargoResponseDTO> filtrar(String descricao, String codigo, Boolean ativo, Pageable pageable) {
         String descFiltro = (descricao == null || descricao.trim().isEmpty()) ? "" : descricao.trim();
         String codFiltro = (codigo == null || codigo.trim().isEmpty()) ? "" : codigo.trim();
 
-        return cargoRepository.filtrar(descFiltro, codFiltro, pageable)
+        return cargoRepository.filtrar(descFiltro, codFiltro, ativo, pageable)
                 .map(CargoResponseDTO::new);
     }
 }

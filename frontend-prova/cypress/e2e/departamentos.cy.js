@@ -73,4 +73,22 @@ describe('Departamentos', () => {
       cy.get('@relatorio').its('response.headers.content-type').should('include', 'application/pdf');
     });
   });
+
+  it('inativa um departamento pela edição e lista nos inativos', () => {
+    cy.criarDepartamentoApi().then((depto) => {
+      cy.visit(`/departamentos/editar/${depto.id}`);
+      cy.contains('legend', 'Situação').parent().find('select').select('inativo');
+      cy.clicarBotao('Salvar');
+
+      cy.url().should('include', '/departamentos');
+      cy.preencherCampoPorLegenda('Código', depto.codigoDepartamento);
+      cy.clicarBotao('Filtrar');
+      cy.contains('td', depto.codigoDepartamento).should('not.exist');
+
+      cy.contains('legend', 'Situação').parent().find('select').select('inativo');
+      cy.clicarBotao('Filtrar');
+      cy.contains('td', depto.codigoDepartamento).should('be.visible');
+      cy.contains('td', 'Inativo').should('be.visible');
+    });
+  });
 });

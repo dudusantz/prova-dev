@@ -136,8 +136,8 @@ export default function Funcionarios() {
 
   async function carregarListasAuxiliares() {
     try {
-      const resCargos = await api.get('/cargos', { params: { page: 0, size: 1000 } });
-      const resDeptos = await api.get('/departamentos', { params: { page: 0, size: 1000 } });
+      const resCargos = await api.get('/cargos', { params: { page: 0, size: 1000, ativo: true } });
+      const resDeptos = await api.get('/departamentos', { params: { page: 0, size: 1000, ativo: true } });
       setCargosDb(resCargos.data.content || resCargos.data);
       setDepartamentosDb(resDeptos.data.content || resDeptos.data);
     } catch (error) {

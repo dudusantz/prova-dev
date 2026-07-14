@@ -34,7 +34,8 @@ public class DepartamentoController {
             @RequestParam(required = false) String descricao,
             @RequestParam(required = false) String codigo
     ) {
-        byte[] pdf = relatorioService.gerarRelatorioDepartamentos(descricao, codigo);
+        // Relatório sempre lista apenas cadastros ativos
+        byte[] pdf = relatorioService.gerarRelatorioDepartamentos(descricao, codigo, true);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=relatorio-departamentos.pdf")
                 .contentType(MediaType.APPLICATION_PDF)
@@ -50,15 +51,21 @@ public class DepartamentoController {
     public ResponseEntity<Page<DepartamentoResponseDTO>> listar(
             @RequestParam(required = false) String descricao,
             @RequestParam(required = false) String codigo,
+            @RequestParam(required = false, defaultValue = "true") Boolean ativo,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) Boolean todos
     ) {
+        Boolean filtroAtivo = Boolean.TRUE.equals(todos) ? null : ativo;
         Pageable pageable = PageRequest.of(page, size);
-        return ResponseEntity.ok(departamentoService.filtrar(descricao, codigo, pageable));
+        return ResponseEntity.ok(departamentoService.filtrar(descricao, codigo, filtroAtivo, pageable));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<DepartamentoResponseDTO> atualizar(@PathVariable Long id, @RequestBody @Valid DepartamentoRequestDTO dto) {
+    public ResponseEntity<DepartamentoResponseDTO> atualizar(
+            @PathVariable Long id,
+            @RequestBody @Valid DepartamentoRequestDTO dto
+    ) {
         return ResponseEntity.ok(departamentoService.atualizar(id, dto));
     }
 }

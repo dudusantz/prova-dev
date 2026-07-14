@@ -20,7 +20,7 @@ public class DepartamentoService {
     @Transactional
     public DepartamentoResponseDTO salvar(DepartamentoRequestDTO dto) {
         String codigo = dto.codigoDepartamento();
-        
+
         if (departamentoRepository.existeCodigoIgual(codigo)) {
             throw new RegraNegocioException("Já existe um departamento cadastrado com o código: " + codigo);
         }
@@ -28,6 +28,7 @@ public class DepartamentoService {
         Departamento departamento = new Departamento();
         departamento.setDescricao(dto.descricao());
         departamento.setCodigoDepartamento(codigo);
+        departamento.setAtivo(true);
 
         departamento = departamentoRepository.save(departamento);
         return new DepartamentoResponseDTO(departamento);
@@ -53,17 +54,20 @@ public class DepartamentoService {
 
         departamento.setDescricao(dto.descricao());
         departamento.setCodigoDepartamento(codigo);
+        if (dto.ativo() != null) {
+            departamento.setAtivo(dto.ativo());
+        }
 
         departamento = departamentoRepository.save(departamento);
         return new DepartamentoResponseDTO(departamento);
     }
 
     @Transactional(readOnly = true)
-    public Page<DepartamentoResponseDTO> filtrar(String descricao, String codigo, Pageable pageable) {
+    public Page<DepartamentoResponseDTO> filtrar(String descricao, String codigo, Boolean ativo, Pageable pageable) {
         String descFiltro = (descricao == null || descricao.trim().isEmpty()) ? "" : descricao.trim();
         String codFiltro = (codigo == null || codigo.trim().isEmpty()) ? "" : codigo.trim();
 
-        return departamentoRepository.filtrar(descFiltro, codFiltro, pageable)
+        return departamentoRepository.filtrar(descFiltro, codFiltro, ativo, pageable)
                 .map(DepartamentoResponseDTO::new);
     }
 }

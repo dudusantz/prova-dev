@@ -28,4 +28,7 @@ public class Cargo {
     @NotBlank(message = "A descrição do cargo é obrigatória")
     @Column(nullable = false, length = 150)
     private String descricao;
+
+    @Column(nullable = false)
+    private Boolean ativo = true;
 }

@@ -41,15 +41,17 @@ class CargoServiceTest {
             return cargo;
         });
 
-        CargoResponseDTO response = cargoService.salvar(new CargoRequestDTO("DEV-01", "Desenvolvedor"));
+        CargoResponseDTO response = cargoService.salvar(new CargoRequestDTO("DEV-01", "Desenvolvedor", null));
 
         assertEquals(1L, response.id());
         assertEquals("DEV-01", response.codigoCargo());
         assertEquals("Desenvolvedor", response.descricao());
+        assertTrue(response.ativo());
 
         ArgumentCaptor<Cargo> captor = ArgumentCaptor.forClass(Cargo.class);
         verify(cargoRepository).save(captor.capture());
         assertEquals("DEV-01", captor.getValue().getCodigoCargo());
+        assertTrue(captor.getValue().getAtivo());
     }
 
     @Test
@@ -58,7 +60,7 @@ class CargoServiceTest {
 
         RegraNegocioException ex = assertThrows(
                 RegraNegocioException.class,
-                () -> cargoService.salvar(new CargoRequestDTO("DEV-01", "Desenvolvedor"))
+                () -> cargoService.salvar(new CargoRequestDTO("DEV-01", "Desenvolvedor", null))
         );
 
         assertTrue(ex.getMessage().contains("Já existe um cargo cadastrado com o código"));
@@ -71,15 +73,57 @@ class CargoServiceTest {
         existente.setId(1L);
         existente.setCodigoCargo("DEV-01");
         existente.setDescricao("Antigo");
+        existente.setAtivo(true);
 
         when(cargoRepository.findById(1L)).thenReturn(Optional.of(existente));
         when(cargoRepository.existeCodigoIgualEmOutroCargo("DEV-02", 1L)).thenReturn(false);
         when(cargoRepository.save(any(Cargo.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        CargoResponseDTO response = cargoService.atualizar(1L, new CargoRequestDTO("DEV-02", "Novo"));
+        CargoResponseDTO response = cargoService.atualizar(1L, new CargoRequestDTO("DEV-02", "Novo", null));
 
         assertEquals("DEV-02", response.codigoCargo());
         assertEquals("Novo", response.descricao());
+        assertTrue(response.ativo());
+    }
+
+    @Test
+    void deveInativarCargoNaEdicao() {
+        Cargo existente = new Cargo();
+        existente.setId(1L);
+        existente.setCodigoCargo("DEV-01");
+        existente.setDescricao("Desenvolvedor");
+        existente.setAtivo(true);
+
+        when(cargoRepository.findById(1L)).thenReturn(Optional.of(existente));
+        when(cargoRepository.existeCodigoIgualEmOutroCargo("DEV-01", 1L)).thenReturn(false);
+        when(cargoRepository.save(any(Cargo.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        CargoResponseDTO response = cargoService.atualizar(
+                1L,
+                new CargoRequestDTO("DEV-01", "Desenvolvedor", false)
+        );
+
+        assertFalse(response.ativo());
+    }
+
+    @Test
+    void deveAtivarCargoNaEdicao() {
+        Cargo existente = new Cargo();
+        existente.setId(1L);
+        existente.setCodigoCargo("DEV-01");
+        existente.setDescricao("Desenvolvedor");
+        existente.setAtivo(false);
+
+        when(cargoRepository.findById(1L)).thenReturn(Optional.of(existente));
+        when(cargoRepository.existeCodigoIgualEmOutroCargo("DEV-01", 1L)).thenReturn(false);
+        when(cargoRepository.save(any(Cargo.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        CargoResponseDTO response = cargoService.atualizar(
+                1L,
+                new CargoRequestDTO("DEV-01", "Desenvolvedor", true)
+        );
+
+        assertTrue(response.ativo());
     }
 
     @Test
@@ -94,7 +138,7 @@ class CargoServiceTest {
 
         RegraNegocioException ex = assertThrows(
                 RegraNegocioException.class,
-                () -> cargoService.atualizar(1L, new CargoRequestDTO("QA-01", "QA"))
+                () -> cargoService.atualizar(1L, new CargoRequestDTO("QA-01", "QA", null))
         );
 
         assertTrue(ex.getMessage().contains("já está sendo usado por outro cargo"));
@@ -108,25 +152,26 @@ class CargoServiceTest {
         cargo.setId(1L);
         cargo.setCodigoCargo("DEV-01");
         cargo.setDescricao("Desenvolvedor");
+        cargo.setAtivo(true);
 
-        when(cargoRepository.filtrar(eq(""), eq(""), eq(pageable)))
+        when(cargoRepository.filtrar(eq(""), eq(""), eq(true), eq(pageable)))
                 .thenReturn(new PageImpl<>(List.of(cargo)));
 
-        Page<CargoResponseDTO> resultado = cargoService.filtrar(null, "  ", pageable);
+        Page<CargoResponseDTO> resultado = cargoService.filtrar(null, "  ", true, pageable);
 
         assertEquals(1, resultado.getTotalElements());
         assertEquals("DEV-01", resultado.getContent().get(0).codigoCargo());
-        verify(cargoRepository).filtrar("", "", pageable);
+        verify(cargoRepository).filtrar("", "", true, pageable);
     }
 
     @Test
     void deveFiltrarRepassandoCriteriosInformados() {
         Pageable pageable = PageRequest.of(0, 10);
-        when(cargoRepository.filtrar("Dev", "DEV", pageable)).thenReturn(Page.empty(pageable));
+        when(cargoRepository.filtrar("Dev", "DEV", null, pageable)).thenReturn(Page.empty(pageable));
 
-        Page<CargoResponseDTO> resultado = cargoService.filtrar("Dev", "DEV", pageable);
+        Page<CargoResponseDTO> resultado = cargoService.filtrar("Dev", "DEV", null, pageable);
 
         assertTrue(resultado.isEmpty());
-        verify(cargoRepository).filtrar("Dev", "DEV", pageable);
+        verify(cargoRepository).filtrar("Dev", "DEV", null, pageable);
     }
 }

@@ -45,6 +45,15 @@ Cypress.Commands.add('apiPut', (path, body) => {
   });
 });
 
+Cypress.Commands.add('apiPatch', (path, body) => {
+  return cy.request({
+    method: 'PATCH',
+    url: `${apiUrl()}${path}`,
+    body,
+    failOnStatusCode: true,
+  });
+});
+
 Cypress.Commands.add('criarCargoApi', (overrides = {}) => {
   const id = suffix();
   const payload = {
@@ -116,7 +125,7 @@ Cypress.Commands.add('clicarBotao', (texto) => {
 });
 
 Cypress.Commands.add('garantirPaginasCargos', (minTotal = 11) => {
-  cy.apiGet('/cargos', { page: 0, size: 1 }).then((res) => {
+  cy.apiGet('/cargos', { page: 0, size: 1, ativo: true }).then((res) => {
     const total = res.body.totalElements || 0;
     const faltam = Math.max(0, minTotal - total);
     for (let i = 0; i < faltam; i += 1) {
@@ -126,7 +135,7 @@ Cypress.Commands.add('garantirPaginasCargos', (minTotal = 11) => {
 });
 
 Cypress.Commands.add('garantirPaginasDepartamentos', (minTotal = 11) => {
-  cy.apiGet('/departamentos', { page: 0, size: 1 }).then((res) => {
+  cy.apiGet('/departamentos', { page: 0, size: 1, ativo: true }).then((res) => {
     const total = res.body.totalElements || 0;
     const faltam = Math.max(0, minTotal - total);
     for (let i = 0; i < faltam; i += 1) {

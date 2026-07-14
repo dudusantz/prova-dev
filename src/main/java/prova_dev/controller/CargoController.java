@@ -35,7 +35,8 @@ public class CargoController {
             @RequestParam(required = false) String descricao,
             @RequestParam(required = false) String codigo
     ) {
-        byte[] pdf = relatorioService.gerarRelatorioCargos(descricao, codigo);
+        // Relatório sempre lista apenas cadastros ativos
+        byte[] pdf = relatorioService.gerarRelatorioCargos(descricao, codigo, true);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=relatorio-cargos.pdf")
                 .contentType(MediaType.APPLICATION_PDF)
@@ -51,11 +52,14 @@ public class CargoController {
     public ResponseEntity<Page<CargoResponseDTO>> listar(
             @RequestParam(required = false) String descricao,
             @RequestParam(required = false) String codigo,
+            @RequestParam(required = false, defaultValue = "true") Boolean ativo,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) Boolean todos
     ) {
+        Boolean filtroAtivo = Boolean.TRUE.equals(todos) ? null : ativo;
         Pageable pageable = PageRequest.of(page, size);
-        return ResponseEntity.ok(cargoService.filtrar(descricao, codigo, pageable));
+        return ResponseEntity.ok(cargoService.filtrar(descricao, codigo, filtroAtivo, pageable));
     }
 
     @PutMapping("/{id}")

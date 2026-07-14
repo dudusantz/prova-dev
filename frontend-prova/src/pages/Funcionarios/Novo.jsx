@@ -44,8 +44,8 @@ export default function NovoFuncionario() {
     async function carregarDependencias() {
       try {
         const [resCargos, resDeptos] = await Promise.all([
-          api.get('/cargos', { params: { page: 0, size: 1000 } }),
-          api.get('/departamentos', { params: { page: 0, size: 1000 } })
+          api.get('/cargos', { params: { page: 0, size: 1000, ativo: true } }),
+          api.get('/departamentos', { params: { page: 0, size: 1000, ativo: true } })
         ]);
         setCargosDb(resCargos.data.content || resCargos.data);
         setDepartamentosDb(resDeptos.data.content || resDeptos.data);

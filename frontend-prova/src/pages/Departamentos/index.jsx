@@ -18,6 +18,27 @@ const FilterInput = ({ label, placeholder, value, onChange }) => (
   </fieldset>
 );
 
+const FilterSelect = ({ label, value, onChange, options }) => (
+  <fieldset className="border border-outline rounded px-2 pb-1.5 pt-0 bg-fundo focus-within:border-azul-base transition-colors">
+    <legend className="text-[12px] text-titulo-campo px-1 font-medium">{label}</legend>
+    <select
+      value={value}
+      onChange={onChange}
+      className="w-full outline-none text-sm bg-transparent text-destaque font-semibold"
+    >
+      {options.map((opt) => (
+        <option key={opt.value} value={opt.value}>{opt.label}</option>
+      ))}
+    </select>
+  </fieldset>
+);
+
+function paramsSituacao(situacao) {
+  if (situacao === 'todos') return { todos: true };
+  if (situacao === 'inativo') return { ativo: false };
+  return { ativo: true };
+}
+
 export default function Departamentos() {
   const navigate = useNavigate();
   const [departamentos, setDepartamentos] = useState([]);
@@ -25,6 +46,7 @@ export default function Departamentos() {
 
   const [filtroDescricao, setFiltroDescricao] = useState('');
   const [filtroCodigo, setFiltroCodigo] = useState('');
+  const [filtroSituacao, setFiltroSituacao] = useState('ativo');
 
   const [pagina, setPagina] = useState(0);
   const [totalPaginas, setTotalPaginas] = useState(0);
@@ -33,15 +55,20 @@ export default function Departamentos() {
     handleFiltrar(0);
   }, []);
 
-  async function handleFiltrar(pageIndex = 0) {
+  async function handleFiltrar(pageIndex = 0, overrides = {}) {
+    const descricao = overrides.descricao ?? filtroDescricao;
+    const codigo = overrides.codigo ?? filtroCodigo;
+    const situacao = overrides.situacao ?? filtroSituacao;
+
     setCarregando(true);
     try {
       const response = await api.get('/departamentos', {
         params: {
-          descricao: filtroDescricao,
-          codigo: filtroCodigo,
+          descricao,
+          codigo,
           page: pageIndex,
-          size: 10
+          size: 10,
+          ...paramsSituacao(situacao),
         }
       });
       setDepartamentos(response.data.content);
@@ -57,7 +84,8 @@ export default function Departamentos() {
   function handleLimparFiltros() {
     setFiltroDescricao('');
     setFiltroCodigo('');
-    handleFiltrar(0);
+    setFiltroSituacao('ativo');
+    handleFiltrar(0, { descricao: '', codigo: '', situacao: 'ativo' });
   }
 
   async function handleBaixarRelatorio() {
@@ -83,7 +111,7 @@ export default function Departamentos() {
           <p className="text-corpo text-sm">Veja os departamentos cadastrados no sistema.</p>
         </div>
         <div className="flex gap-4">
-          <button 
+          <button
             onClick={handleBaixarRelatorio}
             className="flex items-center gap-2 px-4 py-2 border-2 border-azul-base text-azul-base rounded bg-fundo hover:bg-azul-leve font-semibold transition-colors text-sm"
           >
@@ -101,8 +129,8 @@ export default function Departamentos() {
       </div>
 
       <div className="bg-fundo rounded-xl shadow-[0_2px_10px_-3px_rgba(51,121,188,0.25)] border border-outline p-6">
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 items-end">
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 items-end">
           <FilterInput
             label="Descrição do Departamento"
             placeholder="Procure pelo nome do departamento"
@@ -115,17 +143,27 @@ export default function Departamentos() {
             value={filtroCodigo}
             onChange={(e) => setFiltroCodigo(e.target.value)}
           />
+          <FilterSelect
+            label="Situação"
+            value={filtroSituacao}
+            onChange={(e) => setFiltroSituacao(e.target.value)}
+            options={[
+              { value: 'ativo', label: 'Ativo' },
+              { value: 'inativo', label: 'Inativo' },
+              { value: 'todos', label: 'Todos' },
+            ]}
+          />
         </div>
 
         <div className="flex justify-end gap-3 mb-6">
-          <button 
+          <button
             onClick={handleLimparFiltros}
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs border border-outline text-corpo rounded hover:bg-fundo-2 font-semibold transition-colors"
           >
             <RotateCcw size={14} />
             Limpar Filtros
           </button>
-          <button 
+          <button
             onClick={() => handleFiltrar(0)}
             className="flex items-center gap-1.5 px-5 py-1.5 text-xs bg-azul-base text-white rounded hover:bg-azul-hover font-semibold transition-colors shadow-sm"
           >
@@ -141,18 +179,19 @@ export default function Departamentos() {
                 <th className="py-3 px-4 w-20 text-center text-azul-base font-bold text-sm">Editar</th>
                 <th className="py-3 px-4 text-azul-base font-bold text-sm">Descrição</th>
                 <th className="py-3 px-4 text-azul-base font-bold text-sm">Código</th>
+                <th className="py-3 px-4 text-azul-base font-bold text-sm">Situação</th>
               </tr>
             </thead>
             <tbody>
               {carregando ? (
                 <tr>
-                  <td colSpan="3" className="py-8 text-center text-corpo">
+                  <td colSpan="4" className="py-8 text-center text-corpo">
                     Buscando registros no servidor...
                   </td>
                 </tr>
               ) : departamentos.length === 0 ? (
                 <tr>
-                  <td colSpan="3" className="py-8 text-center text-corpo">
+                  <td colSpan="4" className="py-8 text-center text-corpo">
                     Nenhum departamento encontrado.
                   </td>
                 </tr>
@@ -170,6 +209,9 @@ export default function Departamentos() {
                     </td>
                     <td className="py-3 px-4 text-sm font-bold text-destaque">{depto.descricao}</td>
                     <td className="py-3 px-4 text-sm font-bold text-destaque">{depto.codigoDepartamento || depto.codigo}</td>
+                    <td className="py-3 px-4 text-sm font-bold text-destaque">
+                      {depto.ativo === false ? 'Inativo' : 'Ativo'}
+                    </td>
                   </tr>
                 ))
               )}

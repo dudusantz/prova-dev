@@ -8,8 +8,11 @@ import com.lowagie.text.FontFactory;
 import com.lowagie.text.PageSize;
 import com.lowagie.text.Paragraph;
 import com.lowagie.text.Phrase;
+import com.lowagie.text.Rectangle;
+import com.lowagie.text.pdf.ColumnText;
 import com.lowagie.text.pdf.PdfPCell;
 import com.lowagie.text.pdf.PdfPTable;
+import com.lowagie.text.pdf.PdfPageEventHelper;
 import com.lowagie.text.pdf.PdfWriter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -33,10 +36,13 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class RelatorioService {
 
-    private static final Color AZUL_CABECALHO = new Color(48, 120, 180);
-    private static final Color CINZA_ALTERNADO = new Color(245, 245, 245);
+    /** Azul do estilo espelho ponto (~ #5DADE2), alinhado ao azul-hover da paleta. */
+    private static final Color AZUL_CABECALHO = new Color(93, 173, 226);
+    private static final Color BORDA = new Color(200, 200, 200);
+    private static final Color TEXTO = Color.BLACK;
+    private static final Color TEXTO_SECUNDARIO = new Color(82, 82, 82);
     private static final DateTimeFormatter FORMATADOR_DATA =
-            DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+            DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
     private final FuncionarioService funcionarioService;
     private final CargoService cargoService;
@@ -58,15 +64,17 @@ public class RelatorioService {
     }
 
     @Transactional(readOnly = true)
-    public byte[] gerarRelatorioCargos(String descricao, String codigo) {
-        List<CargoResponseDTO> dados = cargoService.filtrar(descricao, codigo, Pageable.unpaged()).getContent();
+    public byte[] gerarRelatorioCargos(String descricao, String codigo, Boolean ativo) {
+        List<CargoResponseDTO> dados = cargoService
+                .filtrar(descricao, codigo, ativo, Pageable.unpaged())
+                .getContent();
         return montarPdfCargos(dados);
     }
 
     @Transactional(readOnly = true)
-    public byte[] gerarRelatorioDepartamentos(String descricao, String codigo) {
+    public byte[] gerarRelatorioDepartamentos(String descricao, String codigo, Boolean ativo) {
         List<DepartamentoResponseDTO> dados = departamentoService
-                .filtrar(descricao, codigo, Pageable.unpaged())
+                .filtrar(descricao, codigo, ativo, Pageable.unpaged())
                 .getContent();
         return montarPdfDepartamentos(dados);
     }
@@ -76,15 +84,14 @@ public class RelatorioService {
 
         try {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            Document document = new Document(PageSize.A4.rotate(), 36, 36, 36, 36);
-            PdfWriter.getInstance(document, out);
+            Document document = new Document(PageSize.A4.rotate(), 36, 36, 48, 42);
+            PdfWriter writer = PdfWriter.getInstance(document, out);
+            writer.setPageEvent(new RodapePaginaEvent());
             document.open();
 
             adicionarCabecalho(document, "Relat\u00f3rio de Funcion\u00e1rios", dados.size());
 
-            PdfPTable tabela = new PdfPTable(6);
-            tabela.setWidthPercentage(100);
-            tabela.setWidths(new float[]{2.2f, 1.4f, 1.8f, 1.4f, 1.8f, 1.8f});
+            PdfPTable tabela = criarTabela(6, new float[]{2.2f, 1.4f, 1.8f, 1.4f, 1.8f, 1.8f});
             adicionarCabecalhosTabela(
                     tabela,
                     "Nome",
@@ -95,16 +102,14 @@ public class RelatorioService {
                     "Departamento(s)"
             );
 
-            boolean zebra = false;
             for (FuncionarioResponseDTO func : dados) {
                 List<VinculoResponseDTO> vinculos = func.vinculos() == null ? List.of() : func.vinculos();
-                adicionarCelula(tabela, func.nome(), zebra);
-                adicionarCelula(tabela, func.cpf(), zebra);
-                adicionarCelula(tabela, juntar(vinculos, VinculoResponseDTO::empresa), zebra);
-                adicionarCelula(tabela, juntar(vinculos, VinculoResponseDTO::matricula), zebra);
-                adicionarCelula(tabela, juntar(vinculos, VinculoResponseDTO::descricaoCargo), zebra);
-                adicionarCelula(tabela, juntar(vinculos, VinculoResponseDTO::descricaoDepartamento), zebra);
-                zebra = !zebra;
+                adicionarCelula(tabela, func.nome());
+                adicionarCelula(tabela, func.cpf());
+                adicionarCelula(tabela, juntar(vinculos, VinculoResponseDTO::empresa));
+                adicionarCelula(tabela, juntar(vinculos, VinculoResponseDTO::matricula));
+                adicionarCelula(tabela, juntar(vinculos, VinculoResponseDTO::descricaoCargo));
+                adicionarCelula(tabela, juntar(vinculos, VinculoResponseDTO::descricaoDepartamento));
             }
 
             document.add(tabela);
@@ -120,22 +125,20 @@ public class RelatorioService {
 
         try {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            Document document = new Document(PageSize.A4, 36, 36, 36, 36);
-            PdfWriter.getInstance(document, out);
+            Document document = new Document(PageSize.A4, 36, 36, 48, 42);
+            PdfWriter writer = PdfWriter.getInstance(document, out);
+            writer.setPageEvent(new RodapePaginaEvent());
             document.open();
 
             adicionarCabecalho(document, "Relat\u00f3rio de Cargos", dados.size());
 
-            PdfPTable tabela = new PdfPTable(2);
-            tabela.setWidthPercentage(100);
-            tabela.setWidths(new float[]{3f, 2f});
-            adicionarCabecalhosTabela(tabela, "Nome / Descri\u00e7\u00e3o", "C\u00f3digo");
+            PdfPTable tabela = criarTabela(3, new float[]{3.2f, 1.6f, 1.2f});
+            adicionarCabecalhosTabela(tabela, "Nome / Descri\u00e7\u00e3o", "C\u00f3digo", "Situa\u00e7\u00e3o");
 
-            boolean zebra = false;
             for (CargoResponseDTO cargo : dados) {
-                adicionarCelula(tabela, cargo.descricao(), zebra);
-                adicionarCelula(tabela, cargo.codigoCargo(), zebra);
-                zebra = !zebra;
+                adicionarCelula(tabela, cargo.descricao());
+                adicionarCelula(tabela, cargo.codigoCargo());
+                adicionarCelula(tabela, situacao(cargo.ativo()));
             }
 
             document.add(tabela);
@@ -151,22 +154,25 @@ public class RelatorioService {
 
         try {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            Document document = new Document(PageSize.A4, 36, 36, 36, 36);
-            PdfWriter.getInstance(document, out);
+            Document document = new Document(PageSize.A4, 36, 36, 48, 42);
+            PdfWriter writer = PdfWriter.getInstance(document, out);
+            writer.setPageEvent(new RodapePaginaEvent());
             document.open();
 
             adicionarCabecalho(document, "Relat\u00f3rio de Departamentos", dados.size());
 
-            PdfPTable tabela = new PdfPTable(2);
-            tabela.setWidthPercentage(100);
-            tabela.setWidths(new float[]{3f, 2f});
-            adicionarCabecalhosTabela(tabela, "Descri\u00e7\u00e3o do Departamento", "C\u00f3digo");
+            PdfPTable tabela = criarTabela(3, new float[]{3.2f, 1.6f, 1.2f});
+            adicionarCabecalhosTabela(
+                    tabela,
+                    "Descri\u00e7\u00e3o do Departamento",
+                    "C\u00f3digo",
+                    "Situa\u00e7\u00e3o"
+            );
 
-            boolean zebra = false;
             for (DepartamentoResponseDTO depto : dados) {
-                adicionarCelula(tabela, depto.descricao(), zebra);
-                adicionarCelula(tabela, depto.codigoDepartamento(), zebra);
-                zebra = !zebra;
+                adicionarCelula(tabela, depto.descricao());
+                adicionarCelula(tabela, depto.codigoDepartamento());
+                adicionarCelula(tabela, situacao(depto.ativo()));
             }
 
             document.add(tabela);
@@ -183,18 +189,65 @@ public class RelatorioService {
         }
     }
 
+    private PdfPTable criarTabela(int colunas, float[] widths) throws DocumentException {
+        PdfPTable tabela = new PdfPTable(colunas);
+        tabela.setWidthPercentage(100);
+        tabela.setWidths(widths);
+        tabela.setSpacingBefore(4f);
+        tabela.getDefaultCell().setBorderColor(BORDA);
+        return tabela;
+    }
+
     private void adicionarCabecalho(Document document, String titulo, int total) throws DocumentException {
-        Font tituloFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 16, AZUL_CABECALHO);
-        Font metaFont = FontFactory.getFont(FontFactory.HELVETICA, 10, Color.DARK_GRAY);
+        Font marcaFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11, AZUL_CABECALHO);
+        Font tituloFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14, TEXTO);
+        Font metaFont = FontFactory.getFont(FontFactory.HELVETICA, 9, TEXTO_SECUNDARIO);
 
-        Paragraph tituloParagrafo = new Paragraph(titulo, tituloFont);
-        tituloParagrafo.setSpacingAfter(6f);
-        document.add(tituloParagrafo);
+        PdfPTable topo = new PdfPTable(3);
+        topo.setWidthPercentage(100);
+        topo.setWidths(new float[]{1.4f, 3.2f, 1.8f});
 
-        document.add(new Paragraph("Gerado em: " + LocalDateTime.now().format(FORMATADOR_DATA), metaFont));
-        Paragraph totalParagrafo = new Paragraph("Total de registros: " + total, metaFont);
-        totalParagrafo.setSpacingAfter(14f);
-        document.add(totalParagrafo);
+        PdfPCell marca = celulaSemBorda(new Phrase("Gest\u00e3o RH", marcaFont));
+        marca.setHorizontalAlignment(Element.ALIGN_LEFT);
+        marca.setVerticalAlignment(Element.ALIGN_MIDDLE);
+
+        PdfPCell tituloCell = celulaSemBorda(new Phrase(titulo, tituloFont));
+        tituloCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+        tituloCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+
+        PdfPCell dataCell = celulaSemBorda(
+                new Phrase(LocalDateTime.now().format(FORMATADOR_DATA), metaFont)
+        );
+        dataCell.setHorizontalAlignment(Element.ALIGN_RIGHT);
+        dataCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+
+        topo.addCell(marca);
+        topo.addCell(tituloCell);
+        topo.addCell(dataCell);
+        topo.setSpacingAfter(8f);
+        document.add(topo);
+
+        // Linha separadora suave
+        PdfPTable linha = new PdfPTable(1);
+        linha.setWidthPercentage(100);
+        PdfPCell barra = new PdfPCell();
+        barra.setFixedHeight(2.5f);
+        barra.setBackgroundColor(AZUL_CABECALHO);
+        barra.setBorder(Rectangle.NO_BORDER);
+        linha.addCell(barra);
+        linha.setSpacingAfter(10f);
+        document.add(linha);
+
+        Paragraph resumo = new Paragraph("Total de registros: " + total, metaFont);
+        resumo.setSpacingAfter(10f);
+        document.add(resumo);
+    }
+
+    private PdfPCell celulaSemBorda(Phrase phrase) {
+        PdfPCell cell = new PdfPCell(phrase);
+        cell.setBorder(Rectangle.NO_BORDER);
+        cell.setPadding(2f);
+        return cell;
     }
 
     private void adicionarCabecalhosTabela(PdfPTable tabela, String... titulos) {
@@ -203,19 +256,27 @@ public class RelatorioService {
             PdfPCell cell = new PdfPCell(new Phrase(titulo, font));
             cell.setBackgroundColor(AZUL_CABECALHO);
             cell.setHorizontalAlignment(Element.ALIGN_LEFT);
+            cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
             cell.setPadding(6f);
+            cell.setBorderColor(BORDA);
+            cell.setBorderWidth(0.6f);
             tabela.addCell(cell);
         }
     }
 
-    private void adicionarCelula(PdfPTable tabela, String valor, boolean zebra) {
-        Font font = FontFactory.getFont(FontFactory.HELVETICA, 8, Color.BLACK);
+    private void adicionarCelula(PdfPTable tabela, String valor) {
+        Font font = FontFactory.getFont(FontFactory.HELVETICA, 8, TEXTO);
         PdfPCell cell = new PdfPCell(new Phrase(valor == null || valor.isBlank() ? "-" : valor, font));
         cell.setPadding(5f);
-        if (zebra) {
-            cell.setBackgroundColor(CINZA_ALTERNADO);
-        }
+        cell.setBorderColor(BORDA);
+        cell.setBorderWidth(0.6f);
+        cell.setBackgroundColor(Color.WHITE);
+        cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
         tabela.addCell(cell);
+    }
+
+    private String situacao(Boolean ativo) {
+        return Boolean.FALSE.equals(ativo) ? "Inativo" : "Ativo";
     }
 
     private String juntar(List<VinculoResponseDTO> vinculos, Function<VinculoResponseDTO, String> mapper) {
@@ -226,5 +287,33 @@ public class RelatorioService {
                 .map(mapper)
                 .map(v -> v == null || v.isBlank() ? "N/D" : v)
                 .collect(Collectors.joining("\n"));
+    }
+
+    /** Rodapé no estilo do espelho ponto: linha + numeração à direita. */
+    private static final class RodapePaginaEvent extends PdfPageEventHelper {
+
+        private final Font font = FontFactory.getFont(FontFactory.HELVETICA, 8, TEXTO_SECUNDARIO);
+
+        @Override
+        public void onEndPage(PdfWriter writer, Document document) {
+            float xInicio = document.leftMargin();
+            float xFim = document.getPageSize().getWidth() - document.rightMargin();
+            float y = document.bottomMargin() - 12;
+
+            writer.getDirectContent().setColorStroke(BORDA);
+            writer.getDirectContent().setLineWidth(0.6f);
+            writer.getDirectContent().moveTo(xInicio, y + 10);
+            writer.getDirectContent().lineTo(xFim, y + 10);
+            writer.getDirectContent().stroke();
+
+            ColumnText.showTextAligned(
+                    writer.getDirectContent(),
+                    Element.ALIGN_RIGHT,
+                    new Phrase("P\u00e1gina " + writer.getPageNumber(), font),
+                    xFim,
+                    y,
+                    0
+            );
+        }
     }
 }

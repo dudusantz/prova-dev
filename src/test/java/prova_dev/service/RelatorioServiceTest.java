@@ -55,7 +55,7 @@ class RelatorioServiceTest {
     @Test
     void deveGerarPdfCargos() {
         byte[] pdf = relatorioService.montarPdfCargos(
-                List.of(new CargoResponseDTO(1L, "DEV-01", "Desenvolvedor"))
+                List.of(new CargoResponseDTO(1L, "DEV-01", "Desenvolvedor", true))
         );
 
         assertNotNull(pdf);
@@ -66,7 +66,7 @@ class RelatorioServiceTest {
     @Test
     void deveGerarPdfDepartamentos() {
         byte[] pdf = relatorioService.montarPdfDepartamentos(
-                List.of(new DepartamentoResponseDTO(1L, "TI-01", "Tecnologia"))
+                List.of(new DepartamentoResponseDTO(1L, "TI-01", "Tecnologia", true))
         );
 
         assertNotNull(pdf);
