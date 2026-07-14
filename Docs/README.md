@@ -1,16 +1,17 @@
-# DocumentaÁ„o ó Gest„o de Funcion·rios
+# Documenta√ß√£o ‚Äî Gest√£o de Funcion√°rios
 
-Õndice da documentaÁ„o do software. O guia operacional completo para instalar e executar tambÈm est· resumido no [README da raiz](../README.md).
+√çndice da documenta√ß√£o do software. O guia operacional completo para instalar e executar tamb√©m est√° resumido no [README da raiz](../README.md).
 
-## Õndice
+## √çndice
 
-| Documento | Conte˙do |
+| Documento | Conte√∫do |
 |-----------|----------|
-| [README da raiz](../README.md) | Quick Start, prÈ-requisitos, testes, troubleshooting |
+| [README da raiz](../README.md) | Quick Start, pr√©-requisitos, testes, troubleshooting |
 | [GUIA-EXECUCAO.md](./GUIA-EXECUCAO.md) | Passo a passo detalhado (backend, frontend, Docker, API) |
-| [ARQUITETURA.md](./ARQUITETURA.md) | Camadas, entidades, endpoints e decisıes tÈcnicas |
+| [ARQUITETURA.md](./ARQUITETURA.md) | Camadas, entidades, endpoints e decis√µes t√©cnicas |
+| [PALETA.md](./PALETA.md) | Cores oficiais e tokens Tailwind |
 
-## Arranque r·pido
+## Arranque r√°pido
 
 1. `docker compose up -d`
 2. `.\mvnw.cmd spring-boot:run` (Windows) ou `./mvnw spring-boot:run`

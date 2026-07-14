@@ -1,5 +1,21 @@
 @import "tailwindcss";
 
+@theme {
+  --color-azul-base: #3379BC;
+  --color-azul-hover: #40A5DD;
+  --color-azul-leve: #C8E5F4;
+  --color-fundo: #FFFFFF;
+  --color-fundo-2: #F9FAFA;
+  --color-outline: #EBEDEE;
+  --color-trancado: #C8C8C8;
+  --color-placeholder: #AFAFAF;
+  --color-titulo-campo: #9B9B9B;
+  --color-corpo: #7A7A7A;
+  --color-tooltip: #525252;
+  --color-destaque: #000000;
+}
+
 body {
-  background-color: #F3F4F6; /* Um cinza bem claro para destacar o painel branco */
+  background-color: #F9FAFA;
+  color: #7A7A7A;
 }

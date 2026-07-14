@@ -56,7 +56,7 @@ describe('Cargos', () => {
     cy.garantirPaginasCargos(11);
     cy.visit('/cargos');
     cy.contains('A visualizar página 1 de').scrollIntoView().should('be.visible');
-    cy.clicarBotao('Próxima');
+    cy.contains('button', '2').click();
     cy.contains('A visualizar página 2 de').scrollIntoView().should('be.visible');
     cy.clicarBotao('Anterior');
     cy.contains('A visualizar página 1 de').scrollIntoView().should('be.visible');

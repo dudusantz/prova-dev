@@ -15,7 +15,7 @@ export async function baixarRelatorioPdf(path, params, filename) {
     if (contentType.includes('application/json')) {
       const texto = await response.data.text();
       const erro = JSON.parse(texto);
-      throw new Error(erro.message || 'Não foi possível gerar o relatório.');
+      throw new Error(erro.message || 'Nï¿½o foi possï¿½vel gerar o relatï¿½rio.');
     }
 
     const blob = new Blob([response.data], { type: 'application/pdf' });
@@ -32,14 +32,14 @@ export async function baixarRelatorioPdf(path, params, filename) {
       try {
         const texto = await error.response.data.text();
         const erro = JSON.parse(texto);
-        throw new Error(erro.message || 'Não foi possível gerar o relatório.');
+        throw new Error(erro.message || 'Nï¿½o foi possï¿½vel gerar o relatï¿½rio.');
       } catch (parseError) {
         if (parseError instanceof Error && parseError.message && !parseError.message.includes('JSON')) {
           throw parseError;
         }
-        throw new Error('Não foi possível gerar o relatório.');
+        throw new Error('Nï¿½o foi possï¿½vel gerar o relatï¿½rio.');
       }
     }
-    throw error instanceof Error ? error : new Error('Não foi possível gerar o relatório.');
+    throw error instanceof Error ? error : new Error('Nï¿½o foi possï¿½vel gerar o relatï¿½rio.');
   }
 }

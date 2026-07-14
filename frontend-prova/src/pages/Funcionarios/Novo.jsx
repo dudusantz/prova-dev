@@ -2,17 +2,18 @@ import { X, Check, Plus, Trash2, Edit, AlertCircle } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../services/api';
+import { SearchableSelect } from '../../components/SearchableSelect';
 
 const FormInput = ({ label, placeholder, value, onChange, maxLength }) => (
-  <fieldset className="border border-gray-300 rounded px-2 pb-1.5 pt-0 bg-white focus-within:border-[#3078b4] transition-colors">
-    <legend className="text-[12px] text-gray-600 px-1 font-medium">{label}</legend>
+  <fieldset className="border border-outline rounded px-2 pb-1.5 pt-0 bg-fundo focus-within:border-azul-base transition-colors">
+    <legend className="text-[12px] text-titulo-campo px-1 font-medium">{label}</legend>
     <input 
       type="text" 
       placeholder={placeholder} 
       value={value}
       onChange={onChange}
       maxLength={maxLength}
-      className="w-full outline-none text-sm placeholder-gray-300 bg-transparent text-black" 
+      className="w-full outline-none text-sm placeholder:text-placeholder bg-transparent text-destaque" 
     />
   </fieldset>
 );
@@ -153,8 +154,8 @@ export default function NovoFuncionario() {
   return (
     <div className="w-full max-w-5xl mx-auto pb-10 flex flex-col relative">
       <div className="mb-6">
-        <h1 className="text-4xl font-bold text-[#3078b4] mb-1">Cadastro de Funcionário</h1>
-        <p className="text-gray-500 text-sm">Adicione as informações do novo funcionário</p>
+        <h1 className="text-4xl font-bold text-azul-base mb-1">Cadastro de Funcionário</h1>
+        <p className="text-corpo text-sm">Adicione as informações do novo funcionário</p>
       </div>
 
       {erroMensagem && (
@@ -164,44 +165,44 @@ export default function NovoFuncionario() {
         </div>
       )}
 
-      <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm mb-6">
-        <h2 className="text-lg font-bold text-[#3078b4] mb-6">Informações Gerais</h2>
+      <div className="bg-fundo rounded-xl border border-outline p-6 shadow-sm mb-6">
+        <h2 className="text-lg font-bold text-azul-base mb-6">Informações Gerais</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <FormInput label="Nome do Funcionário" placeholder="Insira o nome" value={nome} onChange={(e) => { setNome(e.target.value); setErroMensagem(''); }} maxLength={150} />
           <FormInput label="CPF" placeholder="000.000.000-00" value={cpf} onChange={handleCpfChange} maxLength={14} />
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+      <div className="bg-fundo rounded-xl border border-outline p-6 shadow-sm">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-lg font-bold text-[#3078b4]">Empresas</h2>
-          <button onClick={abrirModalNovo} className="flex items-center gap-2 px-4 py-1.5 border border-[#3078b4] text-[#3078b4] rounded-full hover:bg-blue-50 font-semibold transition-colors text-sm">
+          <h2 className="text-lg font-bold text-azul-base">Empresas</h2>
+          <button onClick={abrirModalNovo} className="flex items-center gap-2 px-4 py-1.5 border border-azul-base text-azul-base rounded-full hover:bg-azul-leve font-semibold transition-colors text-sm">
             <Plus size={16} /> Novo Vínculo
           </button>
         </div>
 
-        <div className="border border-gray-200 rounded-lg overflow-hidden">
+        <div className="border border-outline rounded-lg overflow-hidden">
           <table className="w-full text-left border-collapse">
-            <thead className="bg-[#eef2f6]">
+            <thead className="bg-azul-leve">
               <tr>
-                <th className="py-3 px-4 w-24 text-center text-[#3078b4] font-bold text-sm">Ação</th>
-                <th className="py-3 px-4 text-[#3078b4] font-bold text-sm">Empresa</th>
-                <th className="py-3 px-4 text-[#3078b4] font-bold text-sm">Matrícula</th>
-                <th className="py-3 px-4 text-[#3078b4] font-bold text-sm">Cargo</th>
-                <th className="py-3 px-4 text-[#3078b4] font-bold text-sm">Departamento</th>
+                <th className="py-3 px-4 w-24 text-center text-azul-base font-bold text-sm">Ação</th>
+                <th className="py-3 px-4 text-azul-base font-bold text-sm">Empresa</th>
+                <th className="py-3 px-4 text-azul-base font-bold text-sm">Matrícula</th>
+                <th className="py-3 px-4 text-azul-base font-bold text-sm">Cargo</th>
+                <th className="py-3 px-4 text-azul-base font-bold text-sm">Departamento</th>
               </tr>
             </thead>
             <tbody>
               {vinculos.length === 0 ? (
-                <tr><td colSpan="5" className="py-6 text-center text-gray-500">Nenhum vínculo adicionado. Clique em "+ Novo Vínculo".</td></tr>
+                <tr><td colSpan="5" className="py-6 text-center text-corpo">Nenhum vínculo adicionado. Clique em "+ Novo Vínculo".</td></tr>
               ) : (
                 vinculos.map((v, index) => (
-                  <tr key={index} className="border-t border-gray-200">
+                  <tr key={index} className="border-t border-outline">
                     <td className="py-3 px-4 text-center flex justify-center gap-1.5">
                       
                       <button 
                         onClick={() => abrirModalEdicao(index)} 
-                        className="p-1.5 rounded-md text-[#3078b4] bg-blue-50 hover:bg-[#3078b4] hover:text-white transition-all" 
+                        className="p-1.5 rounded-md text-azul-base bg-azul-leve hover:bg-azul-base hover:text-white transition-all" 
                         title="Editar"
                       >
                         <Edit size={16} strokeWidth={2.5} />
@@ -209,7 +210,7 @@ export default function NovoFuncionario() {
                       
                       <button 
                         onClick={() => removerVinculo(index)} 
-                        className="p-1.5 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all" 
+                        className="p-1.5 rounded-md text-trancado hover:text-red-600 hover:bg-red-50 transition-all" 
                         title="Remover"
                       >
                         <Trash2 size={16} strokeWidth={2.5} />
@@ -229,18 +230,18 @@ export default function NovoFuncionario() {
       </div>
 
       <div className="flex justify-center gap-4 mt-12">
-        <button onClick={() => navigate('/')} className="flex items-center gap-2 px-10 py-2 border border-[#3078b4] text-[#3078b4] rounded bg-white hover:bg-blue-50 font-semibold transition-colors text-sm">
+        <button onClick={() => navigate('/')} className="flex items-center gap-2 px-10 py-2 border border-azul-base text-azul-base rounded bg-fundo hover:bg-azul-leve font-semibold transition-colors text-sm">
           <X size={18} /> Cancelar
         </button>
-        <button onClick={handleSalvar} disabled={salvando} className="flex items-center gap-2 px-10 py-2 bg-[#3078b4] text-white rounded hover:bg-[#276496] font-semibold transition-colors text-sm shadow-sm disabled:opacity-70">
+        <button onClick={handleSalvar} disabled={salvando} className="flex items-center gap-2 px-10 py-2 bg-azul-base text-white rounded hover:bg-azul-hover font-semibold transition-colors text-sm shadow-sm disabled:opacity-70">
           <Check size={18} /> {salvando ? 'Salvando...' : 'Confirmar'}
         </button>
       </div>
 
       {modalAberto && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white p-8 rounded-xl shadow-xl w-full max-w-[600px]">
-            <h3 className="text-2xl font-bold text-[#3078b4] mb-8">
+          <div className="bg-fundo p-8 rounded-xl shadow-xl w-full max-w-[600px]">
+            <h3 className="text-2xl font-bold text-azul-base mb-8">
               {vinculoEditandoIndex !== null ? 'Editar Vínculo' : 'Novo Vínculo'}
             </h3>
             
@@ -252,18 +253,29 @@ export default function NovoFuncionario() {
               
               <div className="flex gap-4">
                 <div className="flex-1">
-                  <fieldset className="border border-gray-300 rounded px-2 pb-1.5 pt-0 focus-within:border-[#3078b4] transition-colors"><legend className="text-[12px] text-gray-600 px-1 font-medium">Cargo</legend><select value={cargoSelecionado} onChange={e => setCargoSelecionado(e.target.value)} className="w-full outline-none text-sm text-black bg-transparent cursor-pointer"><option value="">Selecione Uma Opção</option>{cargosDb.map(c => <option key={c.id} value={c.id}>{c.descricao}</option>)}</select></fieldset>
+                  <SearchableSelect
+                    label="Cargo"
+                    placeholder="Digite ou selecione o cargo"
+                    options={cargosDb.map((c) => ({ value: c.id, label: c.descricao }))}
+                    value={cargoSelecionado}
+                    onChange={setCargoSelecionado}
+                  />
                 </div>
-                
                 <div className="flex-1">
-                  <fieldset className="border border-gray-300 rounded px-2 pb-1.5 pt-0 focus-within:border-[#3078b4] transition-colors"><legend className="text-[12px] text-gray-600 px-1 font-medium">Departamento</legend><select value={departamentoSelecionado} onChange={e => setDepartamentoSelecionado(e.target.value)} className="w-full outline-none text-sm text-black bg-transparent cursor-pointer"><option value="">Selecione Uma Opção</option>{departamentosDb.map(d => <option key={d.id} value={d.id}>{d.descricao}</option>)}</select></fieldset>
+                  <SearchableSelect
+                    label="Departamento"
+                    placeholder="Digite ou selecione o departamento"
+                    options={departamentosDb.map((d) => ({ value: d.id, label: d.descricao }))}
+                    value={departamentoSelecionado}
+                    onChange={setDepartamentoSelecionado}
+                  />
                 </div>
               </div>
             </div>
 
             <div className="flex gap-4 mt-10">
-              <button onClick={() => setModalAberto(false)} className="flex-1 flex items-center justify-center gap-2 py-2 border border-[#3078b4] text-[#3078b4] rounded hover:bg-blue-50 font-semibold transition-colors text-sm"><X size={18} /> Cancelar</button>
-              <button onClick={salvarVinculoNoModal} className="flex-1 flex items-center justify-center gap-2 py-2 bg-[#3078b4] text-white rounded hover:bg-[#276496] font-semibold transition-colors text-sm shadow-sm"><Check size={18} /> Confirmar</button>
+              <button onClick={() => setModalAberto(false)} className="flex-1 flex items-center justify-center gap-2 py-2 border border-azul-base text-azul-base rounded hover:bg-azul-leve font-semibold transition-colors text-sm"><X size={18} /> Cancelar</button>
+              <button onClick={salvarVinculoNoModal} className="flex-1 flex items-center justify-center gap-2 py-2 bg-azul-base text-white rounded hover:bg-azul-hover font-semibold transition-colors text-sm shadow-sm"><Check size={18} /> Confirmar</button>
             </div>
           </div>
         </div>

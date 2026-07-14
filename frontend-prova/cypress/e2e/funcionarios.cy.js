@@ -36,8 +36,8 @@ describe('Funcionários', () => {
           .within(() => {
             cy.preencherCampoPorLegenda('Nome da Empresa', empresa);
             cy.preencherCampoPorLegenda('Matrícula', matricula);
-            cy.contains('legend', 'Cargo').parent().find('select').select(String(cargo.id));
-            cy.contains('legend', 'Departamento').parent().find('select').select(String(depto.id));
+            cy.contains('legend', 'Cargo').parent().find('input').click().type(`${cargo.descricao}{enter}`);
+            cy.contains('legend', 'Departamento').parent().find('input').click().type(`${depto.descricao}{enter}`);
             cy.contains('button', 'Confirmar').click();
           });
 
@@ -88,7 +88,7 @@ describe('Funcionários', () => {
     cy.garantirPaginasFuncionarios(11);
     cy.visit('/');
     cy.contains('A visualizar página 1 de').scrollIntoView().should('be.visible');
-    cy.clicarBotao('Próxima');
+    cy.contains('button', '2').click();
     cy.contains('A visualizar página 2 de').scrollIntoView().should('be.visible');
     cy.clicarBotao('Anterior');
     cy.contains('A visualizar página 1 de').scrollIntoView().should('be.visible');

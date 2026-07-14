@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import { User, Contact, DoorOpen } from 'lucide-react';
+import logoX from '../../assets/logo-x.png';
 
 export function Sidebar() {
   const menuItems = [
@@ -9,9 +10,15 @@ export function Sidebar() {
   ];
 
   return (
-    <aside className="w-28 bg-[#3078b4] flex flex-col items-center py-6 h-screen sticky top-0 shadow-lg shrink-0">
-      <div className="text-white text-6xl font-extrabold mb-12 select-none">
-        X
+    <aside className="w-28 bg-azul-base flex flex-col items-center py-6 h-screen sticky top-0 shadow-lg shrink-0">
+      <div className="mb-10 flex items-center justify-center select-none">
+        <div className="w-16 h-16 bg-fundo rounded-xl flex items-center justify-center p-1.5 shadow-sm">
+          <img
+            src={logoX}
+            alt="Logo"
+            className="w-full h-full object-contain"
+          />
+        </div>
       </div>
 
       <nav className="w-full flex flex-col gap-1">
@@ -22,8 +29,8 @@ export function Sidebar() {
             className={({ isActive }) =>
               `flex flex-col items-center justify-center w-full py-4 text-white transition-all cursor-pointer ${
                 isActive 
-                  ? 'bg-[#276496] border-l-4 border-white' 
-                  : 'border-l-4 border-transparent hover:bg-[#2c6fa5]'
+                  ? 'bg-azul-hover border-l-4 border-white' 
+                  : 'border-l-4 border-transparent hover:bg-azul-hover'
               }`
             }
           >

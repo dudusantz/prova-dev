@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import Select, { components } from 'react-select';
 import { api } from '../../services/api';
 import { baixarRelatorioPdf } from '../../services/relatorio';
+import { Pagination } from '../../components/Pagination';
+import { colors } from '../../theme/colors';
 
 const selectStyles = {
   control: (base) => ({
@@ -22,19 +24,19 @@ const selectStyles = {
     ...base,
     margin: '0px',
     padding: '0px',
-    color: 'black',
+    color: colors.destaque,
     fontWeight: '600',
     fontSize: '14px'
   }),
   singleValue: (base) => ({
     ...base,
-    color: 'black',
+    color: colors.destaque,
     fontWeight: '600',
     fontSize: '14px'
   }),
   placeholder: (base) => ({
     ...base,
-    color: '#d1d5db',
+    color: colors.placeholder,
     fontSize: '14px',
     fontWeight: '400'
   }),
@@ -44,9 +46,9 @@ const selectStyles = {
   dropdownIndicator: (base) => ({
     ...base,
     padding: '0px 4px',
-    color: '#6b7280',
+    color: colors.corpoTexto,
     cursor: 'pointer',
-    '&:hover': { color: '#3078b4' }
+    '&:hover': { color: colors.azulBase }
   }),
   clearIndicator: (base) => ({
     ...base,
@@ -58,23 +60,23 @@ const selectStyles = {
   option: (base, state) => ({
     ...base,
     fontSize: '14px',
-    backgroundColor: state.isSelected ? '#3078b4' : state.isFocused ? '#eef2f6' : 'white',
-    color: state.isSelected ? 'white' : 'black',
+    backgroundColor: state.isSelected ? colors.azulBase : state.isFocused ? colors.azulLeve : colors.background,
+    color: state.isSelected ? colors.background : colors.destaque,
     cursor: 'pointer',
-    '&:active': { backgroundColor: '#276496' }
+    '&:active': { backgroundColor: colors.azulHover }
   })
 };
 
 // Componente de Input de Texto normal
 const FilterInput = ({ label, placeholder, value, onChange }) => (
-  <fieldset className="border border-gray-300 rounded px-2 pb-1.5 pt-0 bg-white focus-within:border-[#3078b4] transition-colors">
-    <legend className="text-[12px] text-gray-600 px-1 font-medium">{label}</legend>
+  <fieldset className="border border-outline rounded px-2 pb-1.5 pt-0 bg-fundo focus-within:border-azul-base transition-colors">
+    <legend className="text-[12px] text-titulo-campo px-1 font-medium">{label}</legend>
     <input
       type="text"
       placeholder={placeholder}
       value={value}
       onChange={onChange}
-      className="w-full outline-none text-sm placeholder-gray-300 bg-transparent text-black font-semibold"
+      className="w-full outline-none text-sm placeholder:text-placeholder bg-transparent text-destaque font-semibold"
     />
   </fieldset>
 );
@@ -88,8 +90,8 @@ const FilterSelect = ({ label, placeholder, options, value, onChange }) => {
   const selectedOption = options.find(opt => opt.value === value) || null;
 
   return (
-    <fieldset className="border border-gray-300 rounded px-2 pb-1.5 pt-0 bg-white focus-within:border-[#3078b4] transition-colors min-w-0">
-      <legend className="text-[12px] text-gray-600 px-1 font-medium whitespace-nowrap overflow-hidden text-ellipsis max-w-full">
+    <fieldset className="border border-outline rounded px-2 pb-1.5 pt-0 bg-fundo focus-within:border-azul-base transition-colors min-w-0">
+      <legend className="text-[12px] text-titulo-campo px-1 font-medium whitespace-nowrap overflow-hidden text-ellipsis max-w-full">
         {label}
       </legend>
       <Select
@@ -206,20 +208,20 @@ export default function Funcionarios() {
     <div className="w-full max-w-7xl mx-auto">
       <div className="flex justify-between items-start mb-6">
         <div>
-          <h1 className="text-4xl font-bold text-[#3078b4] mb-1">Funcionários</h1>
-          <p className="text-gray-500 text-sm">Veja os funcionários cadastrados no sistema.</p>
+          <h1 className="text-4xl font-bold text-azul-base mb-1">Funcionários</h1>
+          <p className="text-corpo text-sm">Veja os funcionários cadastrados no sistema.</p>
         </div>
         <div className="flex gap-4">
           <button 
             onClick={handleBaixarRelatorio}
-            className="flex items-center gap-2 px-4 py-2 border-2 border-[#3078b4] text-[#3078b4] rounded bg-white hover:bg-blue-50 font-semibold transition-colors text-sm"
+            className="flex items-center gap-2 px-4 py-2 border-2 border-azul-base text-azul-base rounded bg-fundo hover:bg-azul-leve font-semibold transition-colors text-sm"
           >
             <Download size={18} />
             Baixar Relatório
           </button>
           <button
             onClick={() => navigate('/funcionarios/novo')}
-            className="flex items-center gap-2 px-4 py-2 bg-[#3078b4] text-white rounded hover:bg-[#276496] font-semibold transition-colors text-sm shadow-sm"
+            className="flex items-center gap-2 px-4 py-2 bg-azul-base text-white rounded hover:bg-azul-hover font-semibold transition-colors text-sm shadow-sm"
           >
             <Plus size={18} />
             Novo Funcionário
@@ -227,7 +229,7 @@ export default function Funcionarios() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.3)] border border-gray-100 p-6">
+      <div className="bg-fundo rounded-xl shadow-[0_2px_10px_-3px_rgba(51,121,188,0.25)] border border-outline p-6">
         
         {/* Área de Filtros */}
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6 items-end">
@@ -256,57 +258,57 @@ export default function Funcionarios() {
 
         {/* Botões de Ação do Filtro */}
         <div className="flex justify-end gap-3 mb-6">
-          <button onClick={handleLimparFiltros} className="flex items-center gap-1.5 px-3 py-1.5 text-xs border border-gray-300 text-gray-500 rounded hover:bg-gray-50 font-semibold transition-colors">
+          <button onClick={handleLimparFiltros} className="flex items-center gap-1.5 px-3 py-1.5 text-xs border border-outline text-corpo rounded hover:bg-fundo-2 font-semibold transition-colors">
             <RotateCcw size={14} /> Limpar Filtros
           </button>
-          <button onClick={() => handleFiltrar(0)} className="flex items-center gap-1.5 px-5 py-1.5 text-xs bg-[#3078b4] text-white rounded hover:bg-[#276496] font-semibold transition-colors shadow-sm">
+          <button onClick={() => handleFiltrar(0)} className="flex items-center gap-1.5 px-5 py-1.5 text-xs bg-azul-base text-white rounded hover:bg-azul-hover font-semibold transition-colors shadow-sm">
             <Search size={14} /> Filtrar
           </button>
         </div>
 
         {/* Tabela de Dados */}
-        <div className="border border-gray-200 rounded-lg overflow-x-auto">
+        <div className="border border-outline rounded-lg overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[900px]">
-            <thead className="bg-[#eef2f6]">
+            <thead className="bg-azul-leve">
               <tr>
-                <th className="py-3 px-4 w-16 text-center text-[#3078b4] font-bold text-sm">Editar</th>
-                <th className="py-3 px-4 text-[#3078b4] font-bold text-sm">Nome</th>
-                <th className="py-3 px-4 text-[#3078b4] font-bold text-sm">CPF</th>
-                <th className="py-3 px-4 text-[#3078b4] font-bold text-sm">Empresa(s)</th>
-                <th className="py-3 px-4 text-[#3078b4] font-bold text-sm">Matrícula(s)</th>
-                <th className="py-3 px-4 text-[#3078b4] font-bold text-sm">Cargo(s)</th>
-                <th className="py-3 px-4 text-[#3078b4] font-bold text-sm">Departamento(s)</th>
+                <th className="py-3 px-4 w-16 text-center text-azul-base font-bold text-sm">Editar</th>
+                <th className="py-3 px-4 text-azul-base font-bold text-sm">Nome</th>
+                <th className="py-3 px-4 text-azul-base font-bold text-sm">CPF</th>
+                <th className="py-3 px-4 text-azul-base font-bold text-sm">Empresa(s)</th>
+                <th className="py-3 px-4 text-azul-base font-bold text-sm">Matrícula(s)</th>
+                <th className="py-3 px-4 text-azul-base font-bold text-sm">Cargo(s)</th>
+                <th className="py-3 px-4 text-azul-base font-bold text-sm">Departamento(s)</th>
               </tr>
             </thead>
             <tbody>
               {carregando ? (
-                <tr><td colSpan="7" className="py-8 text-center text-gray-500">Buscando registros no servidor...</td></tr>
+                <tr><td colSpan="7" className="py-8 text-center text-corpo">Buscando registros no servidor...</td></tr>
               ) : funcionarios.length === 0 ? (
-                <tr><td colSpan="7" className="py-8 text-center text-gray-500">Nenhum funcionário atende aos critérios de busca selecionados.</td></tr>
+                <tr><td colSpan="7" className="py-8 text-center text-corpo">Nenhum funcionário atende aos critérios de busca selecionados.</td></tr>
               ) : (
                 funcionarios.map((func) => (
-                  <tr key={func.id} className="border-t border-gray-200 hover:bg-gray-50 transition-colors">
+                  <tr key={func.id} className="border-t border-outline hover:bg-fundo-2 transition-colors">
                     <td className="py-3 px-4 text-center">
-                      <button onClick={() => navigate(`/funcionarios/editar/${func.id}`)} className="bg-[#3078b4] p-1.5 rounded text-white hover:bg-[#276496] transition-colors" title="Editar">
+                      <button onClick={() => navigate(`/funcionarios/editar/${func.id}`)} className="bg-azul-base p-1.5 rounded text-white hover:bg-azul-hover transition-colors" title="Editar">
                         <Edit size={16} strokeWidth={2.5} />
                       </button>
                     </td>
-                    <td className="py-3 px-4 text-sm font-bold text-black">{func.nome}</td>
-                    <td className="py-3 px-4 text-sm font-bold text-black whitespace-nowrap">{func.cpf}</td>
+                    <td className="py-3 px-4 text-sm font-bold text-destaque">{func.nome}</td>
+                    <td className="py-3 px-4 text-sm font-bold text-destaque whitespace-nowrap">{func.cpf}</td>
                     
-                    <td className="py-3 px-4 text-xs font-medium text-gray-600">
+                    <td className="py-3 px-4 text-xs font-medium text-titulo-campo">
                       {func.vinculos?.length > 0 ? func.vinculos.map(v => v.empresa).join(' / ') : '-'}
                     </td>
-                    <td className="py-3 px-4 text-xs font-medium text-gray-600">
+                    <td className="py-3 px-4 text-xs font-medium text-titulo-campo">
                       {func.vinculos?.length > 0 ? func.vinculos.map(v => v.matricula).join(' / ') : '-'}
                     </td>
-                    <td className="py-3 px-4 text-xs font-medium text-gray-600">
+                    <td className="py-3 px-4 text-xs font-medium text-titulo-campo">
                       {func.vinculos?.length > 0 ? func.vinculos.map(v => {
                         const cargo = cargosDb.find(c => c.codigoCargo === v.codigoCargo || c.id === v.cargoId);
                         return cargo ? cargo.descricao : v.descricaoCargo || 'N/D';
                       }).join(' / ') : '-'}
                     </td>
-                    <td className="py-3 px-4 text-xs font-medium text-gray-600">
+                    <td className="py-3 px-4 text-xs font-medium text-titulo-campo">
                       {func.vinculos?.length > 0 ? func.vinculos.map(v => {
                         const depto = departamentosDb.find(d => d.codigoDepartamento === v.codigoDepartamento || d.id === v.departamentoId);
                         return depto ? depto.descricao : v.descricaoDepartamento || 'N/D';
@@ -319,29 +321,11 @@ export default function Funcionarios() {
           </table>
         </div>
 
-        {totalPaginas > 1 && (
-          <div className="flex justify-between items-center mt-6 pt-4 border-t border-gray-200">
-            <span className="text-sm text-gray-500 font-medium">
-              A visualizar página {pagina + 1} de {totalPaginas}
-            </span>
-            <div className="flex gap-2">
-              <button
-                onClick={() => handleFiltrar(pagina - 1)}
-                disabled={pagina === 0}
-                className="px-4 py-2 text-sm border border-gray-300 text-gray-700 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-semibold"
-              >
-                Anterior
-              </button>
-              <button
-                onClick={() => handleFiltrar(pagina + 1)}
-                disabled={pagina >= totalPaginas - 1}
-                className="px-4 py-2 text-sm border border-gray-300 text-gray-700 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-semibold"
-              >
-                Próxima
-              </button>
-            </div>
-          </div>
-        )}
+        <Pagination
+          pagina={pagina}
+          totalPaginas={totalPaginas}
+          onChange={handleFiltrar}
+        />
 
       </div>
     </div>
