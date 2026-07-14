@@ -112,7 +112,7 @@ describe('Funcionários', () => {
       cy.visit(`/funcionarios/editar/${func.id}`);
       cy.contains('h1', 'Editar Funcionário').should('be.visible');
 
-      cy.contains('button[title="Editar"]').first().click();
+      cy.get('button[title="Editar"]').first().click();
       cy.contains('h3', 'Editar Vínculo').should('be.visible');
       cy.contains('h3', 'Editar Vínculo')
         .parent()
